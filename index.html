@@ -108,7 +108,7 @@
         .hero-banner {
             text-align: center;
             padding: 20px 15px 15px;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.7);
             border: 1px solid var(--card-border);
             border-radius: var(--radius-lg);
             margin-bottom: 15px;
@@ -116,16 +116,37 @@
             overflow: hidden;
         }
 
-        /* Weltkarten-Hintergrund im Hero Banner */
+        /* Toggle Button für die Karte */
+        .map-toggle-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Weltkarten-Hintergrund */
         .world-map-bg {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0.18;
+            opacity: 0.25;
             pointer-events: none;
             z-index: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .world-map-bg.hidden-map {
+            opacity: 0 !important;
         }
 
         .world-map-bg svg {
@@ -134,22 +155,28 @@
             object-fit: cover;
         }
 
+        /* Region-Farben für Grautöne */
+        .region {
+            fill: #334155; /* Inaktive Region: Dunkelgrau */
+            transition: fill 0.4s ease;
+        }
+
+        .region.active-region {
+            fill: #94a3b8; /* Aktive Region der Sprache: Hellgrau */
+        }
+
         .hero-content {
             position: relative;
             z-index: 1;
         }
 
         .lang-flag {
-            font-size: 3rem;
+            font-size: 3.2rem;
             line-height: 1;
             margin-bottom: 6px;
             display: inline-block;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
             transition: transform 0.2s ease;
-        }
-
-        .lang-flag:hover {
-            transform: scale(1.1);
         }
 
         .lang-title {
@@ -469,18 +496,20 @@
         <section id="view-list" class="views-container active">
             <!-- Hero-Header mit Weltkarte & Flagge -->
             <div class="hero-banner">
-                <div class="world-map-bg">
-                    <!-- SVG Weltkarten-Umriss in Grautönen -->
-                    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" fill="none">
-                        <!-- Kontinente / Regionen als stilisierte Pfade -->
-                        <path fill="#475569" d="M150,120 Q180,80 250,90 T300,180 Q250,220 180,200 Z"/> <!-- Nordamerika -->
-                        <path fill="#334155" d="M280,240 Q340,250 310,380 T250,420 Q220,320 280,240 Z"/> <!-- Südamerika -->
-                        <path fill="#64748b" d="M480,90 Q580,70 620,130 T520,200 Q450,160 480,90 Z"/> <!-- Europa -->
-                        <path fill="#475569" d="M470,210 Q580,200 590,340 T480,380 Q430,280 470,210 Z"/> <!-- Afrika -->
-                        <path fill="#334155" d="M620,100 Q800,80 880,200 T700,300 Q600,220 620,100 Z"/> <!-- Asien -->
-                        <path fill="#475569" d="M780,330 Q880,320 860,420 T760,400 Q740,360 780,330 Z"/> <!-- Australien -->
+                <button class="map-toggle-btn" id="mapToggleBtn" onclick="toggleWorldMap()">🗺️ Karte aus</button>
+                
+                <div class="world-map-bg" id="worldMapBg">
+                    <!-- SVG Weltkarte mit einzelnen Regionen -->
+                    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
+                        <path id="region-na" class="region" d="M150,120 Q180,80 250,90 T300,180 Q250,220 180,200 Z"/> <!-- Nordamerika -->
+                        <path id="region-sa" class="region" d="M280,240 Q340,250 310,380 T250,420 Q220,320 280,240 Z"/> <!-- Südamerika -->
+                        <path id="region-eu" class="region" d="M480,90 Q580,70 620,130 T520,200 Q450,160 480,90 Z"/> <!-- Europa -->
+                        <path id="region-af" class="region" d="M470,210 Q580,200 590,340 T480,380 Q430,280 470,210 Z"/> <!-- Afrika -->
+                        <path id="region-as" class="region" d="M620,100 Q800,80 880,200 T700,300 Q600,220 620,100 Z"/> <!-- Asien -->
+                        <path id="region-oc" class="region" d="M780,330 Q880,320 860,420 T760,400 Q740,360 780,330 Z"/> <!-- Ozeanien -->
                     </svg>
                 </div>
+                
                 <div class="hero-content">
                     <div id="heroFlag" class="lang-flag">🌐</div>
                     <div id="heroLangTitle" class="lang-title">Sprache wählen</div>
@@ -736,6 +765,21 @@
             'Chinesisch': '🇨🇳'
         };
 
+        /* Sprachregionen-Zuordnung für Karte */
+        const LANG_REGIONS = {
+            'Spanisch': ['region-eu', 'region-sa', 'region-na'],
+            'Englisch': ['region-na', 'region-eu', 'region-oc', 'region-af'],
+            'Französisch': ['region-eu', 'region-af', 'region-na'],
+            'Italienisch': ['region-eu'],
+            'Portugiesisch': ['region-eu', 'region-sa', 'region-af'],
+            'Deutsch': ['region-eu'],
+            'Russisch': ['region-eu', 'region-as'],
+            'Japanisch': ['region-as'],
+            'Chinesisch': ['region-as']
+        };
+
+        let mapVisible = true;
+
         let appData = JSON.parse(localStorage.getItem('lingoVaultProData')) || {
             currentUser: 'Holger',
             userLangs: { 'Holger': 'Spanisch', 'Sanni': 'Englisch' },
@@ -756,6 +800,20 @@
 
         function saveToLocalStorage() {
             localStorage.setItem('lingoVaultProData', JSON.stringify(appData));
+        }
+
+        function toggleWorldMap() {
+            mapVisible = !mapVisible;
+            const bg = document.getElementById('worldMapBg');
+            const btn = document.getElementById('mapToggleBtn');
+
+            if (mapVisible) {
+                bg.classList.remove('hidden-map');
+                btn.textContent = '🗺️ Karte aus';
+            } else {
+                bg.classList.add('hidden-map');
+                btn.textContent = '🗺️ Karte ein';
+            }
         }
 
         function checkAndUpdateStreak() {
@@ -831,6 +889,14 @@
             const flag = FLAG_MAP[currentLang] || '🌐';
             document.getElementById('heroFlag').textContent = flag;
             document.getElementById('heroLangTitle').textContent = currentLang;
+
+            /* Karte aktualisieren & Regionen in unterschiedlichen Grautönen färben */
+            document.querySelectorAll('.region').forEach(el => el.classList.remove('active-region'));
+            const activeRegions = LANG_REGIONS[currentLang] || [];
+            activeRegions.forEach(regId => {
+                const el = document.getElementById(regId);
+                if (el) el.classList.add('active-region');
+            });
         }
 
         function addLanguage() {
@@ -1386,6 +1452,3 @@
     </script>
 </body>
 </html>
-
-
-
