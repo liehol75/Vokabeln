@@ -100,6 +100,64 @@
             margin-bottom: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hero Banner Container auf der Startseite */
+        .hero-banner {
+            text-align: center;
+            padding: 20px 15px 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Weltkarten-Hintergrund im Hero Banner */
+        .world-map-bg {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .world-map-bg svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .lang-flag {
+            font-size: 3rem;
+            line-height: 1;
+            margin-bottom: 6px;
+            display: inline-block;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+            transition: transform 0.2s ease;
+        }
+
+        .lang-flag:hover {
+            transform: scale(1.1);
+        }
+
+        .lang-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #a5b4fc;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
         }
 
         .views-container {
@@ -407,12 +465,32 @@
     </header>
 
     <main>
-        <!-- VIEW 1: VOCABULARY LIST -->
+        <!-- VIEW 1: VOCABULARY LIST (STARTSEITE) -->
         <section id="view-list" class="views-container active">
-            <div class="glass-card" style="display: flex; gap: 8px;">
-                <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen..." oninput="renderVocabList()">
-                <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 16px;">+</button>
+            <!-- Hero-Header mit Weltkarte & Flagge -->
+            <div class="hero-banner">
+                <div class="world-map-bg">
+                    <!-- SVG Weltkarten-Umriss in Grautönen -->
+                    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" fill="none">
+                        <!-- Kontinente / Regionen als stilisierte Pfade -->
+                        <path fill="#475569" d="M150,120 Q180,80 250,90 T300,180 Q250,220 180,200 Z"/> <!-- Nordamerika -->
+                        <path fill="#334155" d="M280,240 Q340,250 310,380 T250,420 Q220,320 280,240 Z"/> <!-- Südamerika -->
+                        <path fill="#64748b" d="M480,90 Q580,70 620,130 T520,200 Q450,160 480,90 Z"/> <!-- Europa -->
+                        <path fill="#475569" d="M470,210 Q580,200 590,340 T480,380 Q430,280 470,210 Z"/> <!-- Afrika -->
+                        <path fill="#334155" d="M620,100 Q800,80 880,200 T700,300 Q600,220 620,100 Z"/> <!-- Asien -->
+                        <path fill="#475569" d="M780,330 Q880,320 860,420 T760,400 Q740,360 780,330 Z"/> <!-- Australien -->
+                    </svg>
+                </div>
+                <div class="hero-content">
+                    <div id="heroFlag" class="lang-flag">🌐</div>
+                    <div id="heroLangTitle" class="lang-title">Sprache wählen</div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen..." oninput="renderVocabList()">
+                        <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 16px;">+</button>
+                    </div>
+                </div>
             </div>
+
             <div id="vocabList"></div>
         </section>
 
@@ -487,7 +565,6 @@
 
         <!-- VIEW 3: QUIZ / TRAINER -->
         <section id="view-quiz" class="views-container">
-            <!-- Quiz Configuration Toolbar -->
             <div class="glass-card" style="padding: 12px; margin-bottom: 12px;">
                 <div class="grid-2">
                     <div>
@@ -508,7 +585,6 @@
                 </div>
             </div>
 
-            <!-- Main Quiz Card -->
             <div class="glass-card quiz-card" id="quizCard">
                 <div style="display: flex; gap: 8px; position: absolute; top: 15px; left: 15px;">
                     <div id="quizBadge" class="badge">Box 1</div>
@@ -528,11 +604,9 @@
                 <button class="btn btn-primary" style="margin-top: 12px;" id="quizCheckBtn" onclick="checkAnswer()">Prüfen</button>
             </div>
 
-            <!-- Feedback Card -->
             <div id="quizFeedback" class="glass-card hidden" style="text-align: center;">
                 <h3 id="feedbackResult"></h3>
                 <p id="feedbackDetail" style="margin-top: 5px; color: var(--text-muted);"></p>
-                
                 <div id="feedbackActions" style="display: flex; gap: 10px; margin-top: 15px;"></div>
             </div>
         </section>
@@ -594,7 +668,7 @@
 
                 <h3 style="margin-bottom: 10px; font-size: 0.95rem;">CSV-Import (Massen-Import)</h3>
                 <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 10px;">
-                    Format: <code>Wort;Übersetzung;Wortart</code> (Pro Zeile eine Vokabel)
+                    Format: <code>Wort;Übersetzung;Wortart</code>
                 </p>
                 <textarea id="csvImportText" rows="3" placeholder="hablar;sprechen;verb&#10;casa;Haus;substantiv"></textarea>
                 <button class="btn btn-primary" style="margin-top: 8px;" onclick="importCSV()">📥 CSV Importieren</button>
@@ -648,7 +722,19 @@
     </nav>
 
     <script>
-        const BOX_INTERVALS = [0, 1, 3, 7, 14, 30]; // Tage pro Box
+        const BOX_INTERVALS = [0, 1, 3, 7, 14, 30];
+
+        const FLAG_MAP = {
+            'Spanisch': '🇪🇸',
+            'Englisch': '🇬🇧',
+            'Französisch': '🇫🇷',
+            'Italienisch': '🇮🇹',
+            'Portugiesisch': '🇵🇹',
+            'Deutsch': '🇩🇪',
+            'Russisch': '🇷🇺',
+            'Japanisch': '🇯🇵',
+            'Chinesisch': '🇨🇳'
+        };
 
         let appData = JSON.parse(localStorage.getItem('lingoVaultProData')) || {
             currentUser: 'Holger',
@@ -681,9 +767,7 @@
                 const now = new Date(today);
                 const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
 
-                if (diffDays === 1) {
-                    // Vortag aktiv
-                } else if (diffDays > 1) {
+                if (diffDays > 1) {
                     appData.stats.streakDays = 0;
                 }
             }
@@ -708,6 +792,7 @@
             document.getElementById('userSelect').value = appData.currentUser;
             renderLanguageDropdown();
             document.getElementById('settingsUser').textContent = appData.currentUser;
+            updateHeroBanner();
         }
 
         function switchUser() {
@@ -716,6 +801,7 @@
             document.getElementById('settingsUser').textContent = appData.currentUser;
             saveToLocalStorage();
             renderVocabList();
+            updateHeroBanner();
         }
 
         function renderLanguageDropdown() {
@@ -736,7 +822,15 @@
             const selectedLang = document.getElementById('languageSelect').value;
             appData.userLangs[appData.currentUser] = selectedLang;
             saveToLocalStorage();
+            updateHeroBanner();
             renderVocabList();
+        }
+
+        function updateHeroBanner() {
+            const currentLang = appData.userLangs[appData.currentUser] || 'Sprache';
+            const flag = FLAG_MAP[currentLang] || '🌐';
+            document.getElementById('heroFlag').textContent = flag;
+            document.getElementById('heroLangTitle').textContent = currentLang;
         }
 
         function addLanguage() {
@@ -749,6 +843,7 @@
                     appData.userLangs[appData.currentUser] = val;
                     saveToLocalStorage();
                     renderLanguageDropdown();
+                    updateHeroBanner();
                     renderVocabList();
                 }
                 input.value = '';
@@ -1291,5 +1386,6 @@
     </script>
 </body>
 </html>
+
 
 
