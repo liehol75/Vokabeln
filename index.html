@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>LingoVault Pro – Ultimate Trainer</title>
+    <title>LingoVault Ultra – Ultimate Trainer</title>
     
-    <!-- iOS Web App Metadata -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="LingoVault">
@@ -16,12 +15,13 @@
             --primary: #6366f1;
             --primary-hover: #4f46e5;
             --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.75);
+            --card-bg: rgba(30, 41, 59, 0.85);
             --card-border: rgba(255, 255, 255, 0.12);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent-green: #10b981;
             --accent-red: #ef4444;
+            --accent-gold: #f59e0b;
             --radius-lg: 20px;
             --radius-md: 12px;
             --safe-area-bottom: env(safe-area-inset-bottom, 20px);
@@ -29,8 +29,7 @@
 
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
@@ -84,7 +83,7 @@
         }
 
         main {
-            max-width: 500px;
+            max-width: 550px;
             width: 100%;
             margin: 0 auto;
             padding: 15px;
@@ -161,9 +160,7 @@
             transition: transform 0.1s;
         }
 
-        .btn:active {
-            transform: scale(0.98);
-        }
+        .btn:active { transform: scale(0.98); }
 
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), var(--primary-hover));
@@ -227,7 +224,6 @@
             padding: 4px;
         }
 
-        /* Modal Inspector */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -253,7 +249,7 @@
             border-radius: 24px 24px 0 0;
             padding: 24px 20px calc(20px + var(--safe-area-bottom));
             width: 100%;
-            max-width: 500px;
+            max-width: 550px;
             max-height: 85vh;
             overflow-y: auto;
             transform: translateY(100%);
@@ -314,9 +310,8 @@
             font-size: 0.85rem;
         }
 
-        /* Quiz UI Animations & Feedback */
         .quiz-card {
-            min-height: 260px;
+            min-height: 270px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -347,6 +342,21 @@
             margin: 15px 0 5px;
         }
 
+        .box-bar-container {
+            display: flex;
+            gap: 6px;
+            height: 12px;
+            margin-top: 10px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .box-bar-segment {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
         nav.bottom-nav {
             position: fixed;
             bottom: 0; left: 0; right: 0;
@@ -370,7 +380,7 @@
             gap: 3px;
             font-size: 0.7rem;
             cursor: pointer;
-            width: 25%;
+            width: 20%;
         }
 
         .nav-item.active {
@@ -385,9 +395,8 @@
 </head>
 <body>
 
-    <!-- Header -->
     <header>
-        <div class="brand">LingoVault ⚡</div>
+        <div class="brand">LingoVault Ultra ⚡</div>
         <div class="header-controls">
             <select id="userSelect" class="select-btn" onchange="switchUser()">
                 <option value="Holger">👤 Holger</option>
@@ -397,7 +406,6 @@
         </div>
     </header>
 
-    <!-- Main Container -->
     <main>
         <!-- VIEW 1: VOCABULARY LIST -->
         <section id="view-list" class="views-container active">
@@ -433,7 +441,6 @@
                         </select>
                     </div>
 
-                    <!-- Verb Conjugation Grid -->
                     <div id="conjSection" class="hidden">
                         <div class="form-group" style="margin-top: 10px;">
                             <label>Konjugations-Modus</label>
@@ -443,7 +450,7 @@
                             </select>
                         </div>
 
-                        <label style="color: #a5b4fc; margin-top: 10px;">Konjugation Präsens (Gegenwart - Standard)</label>
+                        <label style="color: #a5b4fc; margin-top: 10px;">Konjugation Präsens (Gegenwart)</label>
                         <div class="grid-2">
                             <input type="text" id="c_pres_1" placeholder="1. Sg (yo / I)">
                             <input type="text" id="c_pres_2" placeholder="2. Sg (tú / you)">
@@ -480,33 +487,93 @@
 
         <!-- VIEW 3: QUIZ / TRAINER -->
         <section id="view-quiz" class="views-container">
+            <!-- Quiz Configuration Toolbar -->
+            <div class="glass-card" style="padding: 12px; margin-bottom: 12px;">
+                <div class="grid-2">
+                    <div>
+                        <label>Abfrage-Richtung</label>
+                        <select id="quizDirection" onchange="startQuiz()">
+                            <option value="foreign_de">Fremdsprache ➔ Deutsch</option>
+                            <option value="de_foreign">Deutsch ➔ Fremdsprache</option>
+                            <option value="verb_conj">Verben: Konjugations-Quiz</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Filter</label>
+                        <select id="quizFilter" onchange="startQuiz()">
+                            <option value="due">⏰ Nur Heute Fällige</option>
+                            <option value="all">📚 Alle Vokabeln</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Quiz Card -->
             <div class="glass-card quiz-card" id="quizCard">
-                <div id="quizBadge" class="badge">Box 1</div>
+                <div style="display: flex; gap: 8px; position: absolute; top: 15px; left: 15px;">
+                    <div id="quizBadge" class="badge">Box 1</div>
+                    <div id="quizDueBadge" class="box-badge">Fällig</div>
+                </div>
+                
                 <div id="quizPrompt" class="quiz-prompt">---</div>
                 <div id="quizSubprompt" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">---</div>
                 
                 <button id="hintBtn" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem; margin-bottom: 10px;" onclick="toggleHint()">💡 Beispielsatz anzeigen</button>
                 <div id="quizHint" style="font-style: italic; color: #a5b4fc; font-size: 0.85rem; margin-bottom: 15px;" class="hidden"></div>
 
-                <input type="text" id="quizInput" placeholder="Deine Antwort..." autocomplete="off" onkeydown="if(event.key==='Enter') checkAnswer()">
-                <button class="btn btn-primary" style="margin-top: 15px;" id="quizCheckBtn" onclick="checkAnswer()">Prüfen</button>
+                <div style="width: 100%; display: flex; gap: 8px;">
+                    <input type="text" id="quizInput" placeholder="Deine Antwort..." autocomplete="off" onkeydown="if(event.key==='Enter') checkAnswer()">
+                    <button class="btn btn-secondary" style="width: auto; padding: 0 15px;" onclick="speakQuizWord()">🔊</button>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 12px;" id="quizCheckBtn" onclick="checkAnswer()">Prüfen</button>
             </div>
 
-            <!-- Enhanced Interactive Feedback Card -->
+            <!-- Feedback Card -->
             <div id="quizFeedback" class="glass-card hidden" style="text-align: center;">
                 <h3 id="feedbackResult"></h3>
                 <p id="feedbackDetail" style="margin-top: 5px; color: var(--text-muted);"></p>
                 
-                <div id="feedbackActions" style="display: flex; gap: 10px; margin-top: 15px;">
-                    <!-- Buttons are dynamically injected -->
-                </div>
+                <div id="feedbackActions" style="display: flex; gap: 10px; margin-top: 15px;"></div>
             </div>
         </section>
 
-        <!-- VIEW 4: SETTINGS / BACKUP -->
+        <!-- VIEW 4: STATS & DASHBOARD -->
+        <section id="view-stats" class="views-container">
+            <div class="glass-card">
+                <h2 style="margin-bottom: 15px;">Lern-Statistik</h2>
+                
+                <div class="grid-2" style="margin-bottom: 15px;">
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
+                        <div style="font-size: 1.6rem; font-weight: 800; color: #a5b4fc;" id="statTotal">0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Gesamte Vokabeln</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
+                        <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-gold);" id="statStreak">0 🔥</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Tages-Streak</div>
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-bottom: 15px;">
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
+                        <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-green);" id="statDue">0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Heute Fällig</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
+                        <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8;" id="statAccuracy">0%</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Erfolgsquote</div>
+                    </div>
+                </div>
+
+                <label>Verteilung auf Fächer (Box 1 - 5)</label>
+                <div class="box-bar-container" id="boxBarContainer"></div>
+                <div id="boxLegend" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 6px;"></div>
+            </div>
+        </section>
+
+        <!-- VIEW 5: SETTINGS / BACKUP / CSV -->
         <section id="view-settings" class="views-container">
             <div class="glass-card">
-                <h2 style="margin-bottom: 15px;">Einstellungen & Backup</h2>
+                <h2 style="margin-bottom: 15px;">Einstellungen & Import</h2>
                 
                 <div class="form-group">
                     <label>Neue Sprache für <span id="settingsUser">Nutzer</span> hinzufügen</label>
@@ -518,16 +585,19 @@
 
                 <hr style="border-color: var(--card-border); margin: 20px 0;">
 
-                <h3 style="margin-bottom: 10px; font-size: 0.95rem;">Daten-Export & Import</h3>
-                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 15px;">
-                    Sichere deine Vokabeln als Datei, um sie auf ein anderes Gerät zu übertragen.
-                </p>
-
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button class="btn btn-secondary" onclick="exportData()">💾 Daten Exportieren (JSON)</button>
-                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📂 Daten Importieren</button>
+                <h3 style="margin-bottom: 10px; font-size: 0.95rem;">Daten-Sicherung (JSON)</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-secondary" onclick="exportData()">💾 Vollständiges Backup Exportieren</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📂 Backup Importieren</button>
                     <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
                 </div>
+
+                <h3 style="margin-bottom: 10px; font-size: 0.95rem;">CSV-Import (Massen-Import)</h3>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 10px;">
+                    Format: <code>Wort;Übersetzung;Wortart</code> (Pro Zeile eine Vokabel)
+                </p>
+                <textarea id="csvImportText" rows="3" placeholder="hablar;sprechen;verb&#10;casa;Haus;substantiv"></textarea>
+                <button class="btn btn-primary" style="margin-top: 8px;" onclick="importCSV()">📥 CSV Importieren</button>
             </div>
         </section>
     </main>
@@ -567,31 +637,71 @@
             <span class="nav-icon">🎯</span>
             <span>Abfrage</span>
         </button>
+        <button class="nav-item" onclick="switchTab('stats', this)">
+            <span class="nav-icon">📊</span>
+            <span>Stats</span>
+        </button>
         <button class="nav-item" onclick="switchTab('settings', this)">
             <span class="nav-icon">⚙️</span>
             <span>Daten</span>
         </button>
     </nav>
 
-    <!-- JS Application Engine -->
     <script>
+        const BOX_INTERVALS = [0, 1, 3, 7, 14, 30]; // Tage pro Box
+
         let appData = JSON.parse(localStorage.getItem('lingoVaultProData')) || {
             currentUser: 'Holger',
             userLangs: { 'Holger': 'Spanisch', 'Sanni': 'Englisch' },
             languages: { 'Holger': ['Spanisch'], 'Sanni': ['Englisch'] },
+            stats: { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 },
             vocabularies: []
         };
 
         let currentActiveVerb = null;
         let currentQuizItem = null;
+        let currentQuizTargetAnswer = "";
 
         document.addEventListener('DOMContentLoaded', () => {
             initUserAndLang();
+            checkAndUpdateStreak();
             renderVocabList();
         });
 
         function saveToLocalStorage() {
             localStorage.setItem('lingoVaultProData', JSON.stringify(appData));
+        }
+
+        function checkAndUpdateStreak() {
+            const today = new Date().toISOString().slice(0, 10);
+            if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 };
+            
+            if (appData.stats.lastActiveDate) {
+                const last = new Date(appData.stats.lastActiveDate);
+                const now = new Date(today);
+                const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+
+                if (diffDays === 1) {
+                    // Vortag aktiv
+                } else if (diffDays > 1) {
+                    appData.stats.streakDays = 0;
+                }
+            }
+        }
+
+        function recordActivity() {
+            const today = new Date().toISOString().slice(0, 10);
+            if (!appData.stats.lastActiveDate) {
+                appData.stats.streakDays = 1;
+            } else if (appData.stats.lastActiveDate !== today) {
+                const last = new Date(appData.stats.lastActiveDate);
+                const now = new Date(today);
+                const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+                if (diffDays === 1) appData.stats.streakDays += 1;
+                else if (diffDays > 1) appData.stats.streakDays = 1;
+            }
+            appData.stats.lastActiveDate = today;
+            saveToLocalStorage();
         }
 
         function initUserAndLang() {
@@ -654,6 +764,7 @@
 
             if (viewId === 'quiz') startQuiz();
             if (viewId === 'list') renderVocabList();
+            if (viewId === 'stats') renderStats();
         }
 
         function toggleVerbFields() {
@@ -662,7 +773,6 @@
             if (type === 'verb') autoGenerateConjugations();
         }
 
-        /* Auto-Fill Engine for Conjugations */
         function autoGenerateConjugations() {
             const fillMode = document.getElementById('conjFillMode').value;
             const type = document.getElementById('inputType').value;
@@ -735,6 +845,7 @@
                 example: document.getElementById('inputExample').value.trim(),
                 grammar: document.getElementById('inputGrammar').value.trim(),
                 box: editId ? (appData.vocabularies.find(v => v.id == editId)?.box || 1) : 1,
+                nextReview: Date.now(),
                 conjugations: type === 'verb' ? {
                     pres: [
                         document.getElementById('c_pres_1').value.trim(),
@@ -814,6 +925,7 @@
             }
 
             filtered.forEach(item => {
+                const isDue = !item.nextReview || item.nextReview <= Date.now();
                 const div = document.createElement('div');
                 div.className = 'vocab-item';
                 div.innerHTML = `
@@ -822,6 +934,7 @@
                             <span>${item.word}</span>
                             <span class="badge">${item.type}</span>
                             <span class="box-badge">Box ${item.box || 1}</span>
+                            ${isDue ? `<span style="color:var(--accent-gold); font-size:0.75rem;">⏰ Fällig</span>` : ''}
                             <button class="audio-btn" onclick="speakText('${item.word}')">🔊</button>
                         </div>
                         <div class="vocab-trans">${item.translation}</div>
@@ -914,10 +1027,29 @@
             }
         }
 
+        function speakQuizWord() {
+            if (currentQuizItem) {
+                const dir = document.getElementById('quizDirection').value;
+                const text = dir === 'de_foreign' ? currentQuizItem.translation : currentQuizItem.word;
+                speakText(text);
+            }
+        }
+
         function startQuiz() {
             const currentLang = appData.userLangs[appData.currentUser];
-            const available = appData.vocabularies.filter(v => v.user === appData.currentUser && v.lang === currentLang);
-            
+            const dir = document.getElementById('quizDirection').value;
+            const filter = document.getElementById('quizFilter').value;
+
+            let available = appData.vocabularies.filter(v => v.user === appData.currentUser && v.lang === currentLang);
+
+            if (filter === 'due') {
+                available = available.filter(v => !v.nextReview || v.nextReview <= Date.now());
+            }
+
+            if (dir === 'verb_conj') {
+                available = available.filter(v => v.type === 'verb' && v.conjugations && v.conjugations.pres);
+            }
+
             const card = document.getElementById('quizCard');
             card.classList.remove('shake', 'correct-glow');
             document.getElementById('quizFeedback').classList.add('hidden');
@@ -927,16 +1059,37 @@
 
             if (available.length === 0) {
                 document.getElementById('quizPrompt').textContent = "Keine Vokabeln";
-                document.getElementById('quizSubprompt').textContent = "Trage erst Vokabeln ein!";
+                document.getElementById('quizSubprompt').textContent = filter === 'due' ? "Alle fälligen Wörter gelernt! 🎉" : "Trage erst Vokabeln ein!";
+                document.getElementById('quizDueBadge').classList.add('hidden');
+                currentQuizItem = null;
                 return;
             }
 
             available.sort((a, b) => (a.box || 1) - (b.box || 1));
             currentQuizItem = available[Math.floor(Math.random() * Math.min(available.length, 3))];
 
+            const isDue = !currentQuizItem.nextReview || currentQuizItem.nextReview <= Date.now();
+            document.getElementById('quizDueBadge').className = isDue ? 'box-badge' : 'hidden';
+
             document.getElementById('quizBadge').textContent = `Box ${currentQuizItem.box || 1}`;
-            document.getElementById('quizPrompt').textContent = currentQuizItem.word;
-            document.getElementById('quizSubprompt').textContent = currentQuizItem.grammar ? `Hinweis: ${currentQuizItem.grammar}` : "Wie lautet die Übersetzung?";
+
+            if (dir === 'foreign_de') {
+                document.getElementById('quizPrompt').textContent = currentQuizItem.word;
+                document.getElementById('quizSubprompt').textContent = "Wie lautet die deutsche Übersetzung?";
+                currentQuizTargetAnswer = currentQuizItem.translation;
+            } else if (dir === 'de_foreign') {
+                document.getElementById('quizPrompt').textContent = currentQuizItem.translation;
+                document.getElementById('quizSubprompt').textContent = `Übersetze ins ${currentLang}:`;
+                currentQuizTargetAnswer = currentQuizItem.word;
+            } else if (dir === 'verb_conj') {
+                const persons = ['yo (1. Sg)', 'tú (2. Sg)', 'él/ella (3. Sg)', 'nosotros (1. Pl)', 'vosotros (2. Pl)', 'ellos (3. Pl)'];
+                const pIndex = Math.floor(Math.random() * 6);
+                const pLabel = persons[pIndex];
+                
+                document.getElementById('quizPrompt').textContent = `${currentQuizItem.word} (${pLabel})`;
+                document.getElementById('quizSubprompt').textContent = "Konjugationsform Präsens:";
+                currentQuizTargetAnswer = currentQuizItem.conjugations.pres[pIndex] || currentQuizItem.word;
+            }
 
             if (currentQuizItem.example) {
                 document.getElementById('hintBtn').classList.remove('hidden');
@@ -954,8 +1107,12 @@
         function checkAnswer() {
             if (!currentQuizItem) return;
 
+            recordActivity();
+            if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0 };
+            appData.stats.totalAnswered += 1;
+
             const input = document.getElementById('quizInput').value.trim().toLowerCase();
-            const target = currentQuizItem.translation.trim().toLowerCase();
+            const target = currentQuizTargetAnswer.trim().toLowerCase();
             const card = document.getElementById('quizCard');
             const feedback = document.getElementById('quizFeedback');
             const resTitle = document.getElementById('feedbackResult');
@@ -965,17 +1122,21 @@
             feedback.classList.remove('hidden');
 
             if (input === target) {
+                appData.stats.totalCorrect += 1;
                 card.classList.add('correct-glow');
                 resTitle.textContent = "Richtig! 🎉";
                 resTitle.style.color = "var(--accent-green)";
-                resDetail.textContent = `Ausgezeichnet! Aufstieg in Box ${Math.min((currentQuizItem.box || 1) + 1, 5)}.`;
                 
-                currentQuizItem.box = Math.min((currentQuizItem.box || 1) + 1, 5);
+                const nextBox = Math.min((currentQuizItem.box || 1) + 1, 5);
+                currentQuizItem.box = nextBox;
+                
+                const daysToAdd = BOX_INTERVALS[nextBox];
+                currentQuizItem.nextReview = Date.now() + (daysToAdd * 24 * 60 * 60 * 1000);
+                
+                resDetail.textContent = `Aufstieg in Box ${nextBox}. Nächste Wiederholung in ${daysToAdd} Tag(en).`;
                 saveToLocalStorage();
 
-                actions.innerHTML = `
-                    <button class="btn btn-primary" onclick="nextQuestion()">Nächste Frage ➔</button>
-                `;
+                actions.innerHTML = `<button class="btn btn-primary" onclick="nextQuestion()">Nächste Frage ➔</button>`;
             } else {
                 card.classList.add('shake');
                 setTimeout(() => card.classList.remove('shake'), 400);
@@ -1005,18 +1166,63 @@
 
             resTitle.textContent = "Lösung 💡";
             resTitle.style.color = "#a5b4fc";
-            resDetail.textContent = `Die richtige Übersetzung lautet: "${currentQuizItem.translation}"`;
+            resDetail.textContent = `Die richtige Antwort lautet: "${currentQuizTargetAnswer}"`;
 
             currentQuizItem.box = 1;
+            currentQuizItem.nextReview = Date.now();
             saveToLocalStorage();
 
-            actions.innerHTML = `
-                <button class="btn btn-primary" onclick="nextQuestion()">Nächste Frage ➔</button>
-            `;
+            actions.innerHTML = `<button class="btn btn-primary" onclick="nextQuestion()">Nächste Frage ➔</button>`;
         }
 
         function nextQuestion() {
             startQuiz();
+        }
+
+        function renderStats() {
+            const currentLang = appData.userLangs[appData.currentUser];
+            const list = appData.vocabularies.filter(v => v.user === appData.currentUser && v.lang === currentLang);
+
+            document.getElementById('statTotal').textContent = list.length;
+            
+            const dueCount = list.filter(v => !v.nextReview || v.nextReview <= Date.now()).length;
+            document.getElementById('statDue').textContent = dueCount;
+
+            const streak = (appData.stats && appData.stats.streakDays) ? appData.stats.streakDays : 0;
+            document.getElementById('statStreak').textContent = `${streak} 🔥`;
+
+            const total = (appData.stats && appData.stats.totalAnswered) ? appData.stats.totalAnswered : 0;
+            const correct = (appData.stats && appData.stats.totalCorrect) ? appData.stats.totalCorrect : 0;
+            const acc = total > 0 ? Math.round((correct / total) * 100) : 100;
+            document.getElementById('statAccuracy').textContent = `${acc}%`;
+
+            const boxCounts = [0, 0, 0, 0, 0, 0];
+            list.forEach(v => {
+                const b = v.box || 1;
+                boxCounts[b] = (boxCounts[b] || 0) + 1;
+            });
+
+            const barContainer = document.getElementById('boxBarContainer');
+            const legendContainer = document.getElementById('boxLegend');
+            barContainer.innerHTML = '';
+            legendContainer.innerHTML = '';
+
+            const colors = ['#ef4444', '#f97316', '#f59e0b', '#3b82f6', '#10b981'];
+
+            for (let i = 1; i <= 5; i++) {
+                const count = boxCounts[i] || 0;
+                const pct = list.length > 0 ? (count / list.length) * 100 : 20;
+
+                const seg = document.createElement('div');
+                seg.className = 'box-bar-segment';
+                seg.style.width = `${pct}%`;
+                seg.style.background = colors[i - 1];
+                barContainer.appendChild(seg);
+
+                const leg = document.createElement('span');
+                leg.textContent = `B${i}: ${count}`;
+                legendContainer.appendChild(leg);
+            }
         }
 
         function exportData() {
@@ -1040,12 +1246,50 @@
                         alert('Daten erfolgreich importiert!');
                     }
                 } catch (err) {
-                    alert('Fehler beim Lesen der Datei.');
+                    alert('Fehler beim Lesen der Backup-Datei.');
                 }
             };
             fileReader.readAsText(event.target.files[0]);
         }
+
+        function importCSV() {
+            const text = document.getElementById('csvImportText').value.trim();
+            if (!text) return;
+
+            const lines = text.split('\n');
+            const currentLang = appData.userLangs[appData.currentUser];
+            let addedCount = 0;
+
+            lines.forEach(line => {
+                const parts = line.split(';');
+                if (parts.length >= 2) {
+                    const word = parts[0].trim();
+                    const trans = parts[1].trim();
+                    const type = parts[2] ? parts[2].trim().toLowerCase() : 'substantiv';
+
+                    if (word && trans) {
+                        appData.vocabularies.push({
+                            id: Date.now() + Math.random(),
+                            user: appData.currentUser,
+                            lang: currentLang,
+                            word: word,
+                            translation: trans,
+                            type: type.includes('verb') ? 'verb' : 'substantiv',
+                            box: 1,
+                            nextReview: Date.now()
+                        });
+                        addedCount++;
+                    }
+                }
+            });
+
+            saveToLocalStorage();
+            document.getElementById('csvImportText').value = '';
+            alert(`${addedCount} Vokabeln erfolgreich per CSV importiert!`);
+            renderVocabList();
+        }
     </script>
 </body>
 </html>
+
 
