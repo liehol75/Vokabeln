@@ -25,6 +25,13 @@
             --radius-lg: 20px;
             --radius-md: 12px;
             --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+            
+            /* Dynamisches Max-Width via Device-Toggle */
+            --container-width: 430px; /* Standard: Phone (iPhone 17 Pro Style) */
+        }
+
+        body.device-tablet {
+            --container-width: 850px; /* Samsung Galaxy Tab A11+ Style */
         }
 
         * {
@@ -43,6 +50,7 @@
             flex-direction: column;
             overflow-x: hidden;
             padding-bottom: calc(85px + var(--safe-area-bottom));
+            transition: all 0.3s ease;
         }
 
         header {
@@ -69,9 +77,10 @@
         .header-controls {
             display: flex;
             gap: 8px;
+            align-items: center;
         }
 
-        .select-btn {
+        .select-btn, .device-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--card-border);
             color: var(--text-main);
@@ -80,14 +89,16 @@
             outline: none;
             font-weight: 600;
             font-size: 0.85rem;
+            cursor: pointer;
         }
 
         main {
-            max-width: 550px;
+            max-width: var(--container-width);
             width: 100%;
             margin: 0 auto;
             padding: 15px;
             flex: 1;
+            transition: max-width 0.3s ease;
         }
 
         .glass-card {
@@ -99,111 +110,125 @@
             padding: 20px;
             margin-bottom: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
             position: relative;
-            overflow: hidden;
         }
 
         /* Hero Banner Container auf der Startseite */
         .hero-banner {
             text-align: center;
-            padding: 20px 15px 15px;
+            padding: 20px;
             background: rgba(15, 23, 42, 0.7);
             border: 1px solid var(--card-border);
             border-radius: var(--radius-lg);
             margin-bottom: 15px;
             position: relative;
-            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Toggle Button für die Karte */
+        /* Control Bar oben im Hero Banner */
+        .hero-header-actions {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
         .map-toggle-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid var(--card-border);
-            color: var(--text-muted);
+            color: var(--text-main);
             border-radius: 20px;
-            padding: 4px 10px;
-            font-size: 0.7rem;
+            padding: 4px 12px;
+            font-size: 0.75rem;
             cursor: pointer;
-            z-index: 10;
             backdrop-filter: blur(4px);
         }
 
-        /* Weltkarten-Hintergrund */
-        .world-map-bg {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0.25;
-            pointer-events: none;
-            z-index: 0;
+        /* Gesonderte, zentrierte Weltkarte */
+        .world-map-container {
+            width: 100%;
+            max-width: 500px;
+            height: 180px;
+            margin: 10px 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: opacity 0.3s ease;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            transition: all 0.3s ease;
         }
 
-        .world-map-bg.hidden-map {
-            opacity: 0 !important;
+        body.device-tablet .world-map-container {
+            max-width: 750px;
+            height: 260px;
         }
 
-        .world-map-bg svg {
+        .world-map-container.hidden-map {
+            display: none !important;
+        }
+
+        .world-map-container svg {
             width: 100%;
             height: 100%;
-            object-fit: cover;
         }
 
-        /* Region-Farben für Grautöne */
-        .region {
-            fill: #334155; /* Inaktive Region: Dunkelgrau */
-            transition: fill 0.4s ease;
+        /* Hochauflösende Detaillierte Länderpfade */
+        .country {
+            fill: #334155; /* Inaktive Länder: Dunkelgrau */
+            stroke: #1e293b;
+            stroke-width: 0.5;
+            transition: fill 0.3s ease;
         }
 
-        .region.active-region {
-            fill: #94a3b8; /* Aktive Region der Sprache: Hellgrau */
+        .country.active-country {
+            fill: #94a3b8; /* Aktive Amtssprachen-Länder: Hellgrau */
+            stroke: #cbd5e1;
+            stroke-width: 0.8;
         }
 
-        .hero-content {
-            position: relative;
-            z-index: 1;
+        .hero-info {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .lang-flag {
-            font-size: 3.2rem;
+            font-size: 3rem;
             line-height: 1;
-            margin-bottom: 6px;
-            display: inline-block;
+            margin-bottom: 4px;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-            transition: transform 0.2s ease;
         }
 
         .lang-title {
             font-size: 1.1rem;
             font-weight: 700;
             color: #a5b4fc;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             letter-spacing: 0.5px;
         }
 
-        .views-container {
-            display: none;
+        .search-box-row {
+            width: 100%;
+            display: flex;
+            gap: 8px;
         }
 
-        .views-container.active {
-            display: block;
-            animation: fadeIn 0.2s ease-in-out;
-        }
+        .views-container { display: none; }
+        .views-container.active { display: block; animation: fadeIn 0.2s ease-in-out; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .form-group {
-            margin-bottom: 12px;
-        }
+        .form-group { margin-bottom: 12px; }
 
         label {
             display: block;
@@ -226,9 +251,7 @@
             outline: none;
         }
 
-        input:focus, textarea:focus {
-            border-color: var(--primary);
-        }
+        input:focus, textarea:focus { border-color: var(--primary); }
 
         .btn {
             width: 100%;
@@ -246,13 +269,11 @@
         }
 
         .btn:active { transform: scale(0.98); }
-
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             color: white;
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
-
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: var(--text-main);
@@ -277,11 +298,7 @@
             gap: 6px;
         }
 
-        .vocab-trans {
-            color: var(--text-muted);
-            font-size: 0.88rem;
-            margin-top: 2px;
-        }
+        .vocab-trans { color: var(--text-muted); font-size: 0.88rem; margin-top: 2px; }
 
         .badge {
             background: rgba(99, 102, 241, 0.2);
@@ -301,13 +318,7 @@
             font-weight: 700;
         }
 
-        .audio-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            padding: 4px;
-        }
+        .audio-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 4px; }
 
         .modal-overlay {
             position: fixed;
@@ -323,10 +334,7 @@
             transition: opacity 0.2s ease;
         }
 
-        .modal-overlay.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
 
         .modal-card {
             background: #1e293b;
@@ -334,16 +342,14 @@
             border-radius: 24px 24px 0 0;
             padding: 24px 20px calc(20px + var(--safe-area-bottom));
             width: 100%;
-            max-width: 550px;
+            max-width: var(--container-width);
             max-height: 85vh;
             overflow-y: auto;
             transform: translateY(100%);
             transition: transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
         }
 
-        .modal-overlay.active .modal-card {
-            transform: translateY(0);
-        }
+        .modal-overlay.active .modal-card { transform: translateY(0); }
 
         .modal-header {
             display: flex;
@@ -352,13 +358,7 @@
             margin-bottom: 15px;
         }
 
-        .tense-tabs {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            margin-bottom: 15px;
-        }
+        .tense-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 15px; }
 
         .tense-tab {
             background: rgba(255, 255, 255, 0.08);
@@ -372,28 +372,11 @@
             cursor: pointer;
         }
 
-        .tense-tab.active {
-            background: var(--primary);
-            color: white;
-        }
+        .tense-tab.active { background: var(--primary); color: white; }
 
-        .conj-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 5px;
-        }
-
-        .conj-table td {
-            padding: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.95rem;
-        }
-
-        .conj-table td:first-child {
-            color: var(--text-muted);
-            width: 40%;
-            font-size: 0.85rem;
-        }
+        .conj-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .conj-table td { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.95rem; }
+        .conj-table td:first-child { color: var(--text-muted); width: 40%; font-size: 0.85rem; }
 
         .quiz-card {
             min-height: 270px;
@@ -405,27 +388,7 @@
             position: relative;
         }
 
-        .quiz-card.shake {
-            animation: shake 0.4s ease-in-out;
-            border-color: var(--accent-red);
-        }
-
-        .quiz-card.correct-glow {
-            border-color: var(--accent-green);
-            box-shadow: 0 0 25px rgba(16, 185, 129, 0.3);
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-10px); }
-            40%, 80% { transform: translateX(10px); }
-        }
-
-        .quiz-prompt {
-            font-size: 1.7rem;
-            font-weight: 800;
-            margin: 15px 0 5px;
-        }
+        .quiz-prompt { font-size: 1.7rem; font-weight: 800; margin: 15px 0 5px; }
 
         .box-bar-container {
             display: flex;
@@ -437,10 +400,7 @@
             background: rgba(0,0,0,0.3);
         }
 
-        .box-bar-segment {
-            height: 100%;
-            transition: width 0.3s ease;
-        }
+        .box-bar-segment { height: 100%; transition: width 0.3s ease; }
 
         nav.bottom-nav {
             position: fixed;
@@ -468,21 +428,19 @@
             width: 20%;
         }
 
-        .nav-item.active {
-            color: var(--primary);
-            font-weight: 700;
-        }
-
+        .nav-item.active { color: var(--primary); font-weight: 700; }
         .nav-icon { font-size: 1.2rem; }
         .hidden { display: none !important; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     </style>
 </head>
-<body>
+<body class="device-phone">
 
     <header>
-        <div class="brand">LingoVault Ultra ⚡</div>
+        <div class="brand">LingoVault ⚡</div>
         <div class="header-controls">
+            <!-- Layout Switch Button: iPhone vs Tablet -->
+            <button class="device-btn" id="deviceToggleBtn" onclick="toggleDeviceLayout()">📱 iPhone 17 Pro</button>
             <select id="userSelect" class="select-btn" onchange="switchUser()">
                 <option value="Holger">👤 Holger</option>
                 <option value="Sanni">👤 Sanni</option>
@@ -494,29 +452,51 @@
     <main>
         <!-- VIEW 1: VOCABULARY LIST (STARTSEITE) -->
         <section id="view-list" class="views-container active">
-            <!-- Hero-Header mit Weltkarte & Flagge -->
             <div class="hero-banner">
-                <button class="map-toggle-btn" id="mapToggleBtn" onclick="toggleWorldMap()">🗺️ Karte aus</button>
+                <div class="hero-header-actions">
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">VERBREITUNG DER SPRACHE</span>
+                    <button class="map-toggle-btn" id="mapToggleBtn" onclick="toggleWorldMap()">🗺️ Karte aus</button>
+                </div>
                 
-                <div class="world-map-bg" id="worldMapBg">
-                    <!-- SVG Weltkarte mit einzelnen Regionen -->
+                <!-- Gesonderte Zentrierte Detaillierte Karte -->
+                <div class="world-map-container" id="worldMapContainer">
                     <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
-                        <path id="region-na" class="region" d="M150,120 Q180,80 250,90 T300,180 Q250,220 180,200 Z"/> <!-- Nordamerika -->
-                        <path id="region-sa" class="region" d="M280,240 Q340,250 310,380 T250,420 Q220,320 280,240 Z"/> <!-- Südamerika -->
-                        <path id="region-eu" class="region" d="M480,90 Q580,70 620,130 T520,200 Q450,160 480,90 Z"/> <!-- Europa -->
-                        <path id="region-af" class="region" d="M470,210 Q580,200 590,340 T480,380 Q430,280 470,210 Z"/> <!-- Afrika -->
-                        <path id="region-as" class="region" d="M620,100 Q800,80 880,200 T700,300 Q600,220 620,100 Z"/> <!-- Asien -->
-                        <path id="region-oc" class="region" d="M780,330 Q880,320 860,420 T760,400 Q740,360 780,330 Z"/> <!-- Ozeanien -->
+                        <!-- Nordamerika & Karibik -->
+                        <path id="cntr-USA" class="country" d="M160,110 L280,100 L300,160 L180,180 Z"/>
+                        <path id="cntr-CAN" class="country" d="M150,50 L290,40 L280,95 L150,105 Z"/>
+                        <path id="cntr-MEX" class="country" d="M170,185 L230,180 L250,230 L200,240 Z"/>
+                        
+                        <!-- Südamerika (Amtssprache Spanisch/Port.) -->
+                        <path id="cntr-ESP_SA" class="country" d="M260,240 L310,240 L340,320 L280,410 L260,350 Z"/> <!-- Südamerika West / Spanisch -->
+                        <path id="cntr-BRA" class="country" d="M315,245 L370,260 L360,360 L285,325 Z"/> <!-- Brasilien / Portugiesisch -->
+                        
+                        <!-- Europa -->
+                        <path id="cntr-ESP" class="country" d="M465,145 L490,145 L490,165 L465,165 Z"/> <!-- Spanien -->
+                        <path id="cntr-GBR" class="country" d="M470,100 L490,100 L490,120 L470,120 Z"/> <!-- UK -->
+                        <path id="cntr-FRA" class="country" d="M495,130 L520,130 L520,155 L495,155 Z"/> <!-- Frankreich -->
+                        <path id="cntr-DEU" class="country" d="M522,110 L545,110 L545,135 L522,135 Z"/> <!-- Deutschland -->
+                        <path id="cntr-ITA" class="country" d="M525,140 L545,140 L540,170 L525,160 Z"/> <!-- Italien -->
+                        <path id="cntr-RUS_EU" class="country" d="M550,70 L700,60 L680,140 L550,130 Z"/> <!-- Russland -->
+
+                        <!-- Afrika -->
+                        <path id="cntr-AFR_NORTH" class="country" d="M460,175 L590,175 L580,260 L460,240 Z"/>
+                        <path id="cntr-AFR_SOUTH" class="country" d="M500,265 L580,265 L560,370 L510,360 Z"/>
+
+                        <!-- Asien & Ozeanien -->
+                        <path id="cntr-CHN" class="country" d="M710,130 L830,130 L810,220 L710,200 Z"/>
+                        <path id="cntr-JPN" class="country" d="M840,140 L860,140 L855,190 L835,190 Z"/>
+                        <path id="cntr-AUS" class="country" d="M780,320 L880,320 L860,420 L760,400 Z"/>
                     </svg>
                 </div>
                 
-                <div class="hero-content">
+                <div class="hero-info">
                     <div id="heroFlag" class="lang-flag">🌐</div>
                     <div id="heroLangTitle" class="lang-title">Sprache wählen</div>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen..." oninput="renderVocabList()">
-                        <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 16px;">+</button>
-                    </div>
+                </div>
+
+                <div class="search-box-row">
+                    <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen..." oninput="renderVocabList()">
+                    <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 18px;">+</button>
                 </div>
             </div>
 
@@ -765,20 +745,21 @@
             'Chinesisch': '🇨🇳'
         };
 
-        /* Sprachregionen-Zuordnung für Karte */
-        const LANG_REGIONS = {
-            'Spanisch': ['region-eu', 'region-sa', 'region-na'],
-            'Englisch': ['region-na', 'region-eu', 'region-oc', 'region-af'],
-            'Französisch': ['region-eu', 'region-af', 'region-na'],
-            'Italienisch': ['region-eu'],
-            'Portugiesisch': ['region-eu', 'region-sa', 'region-af'],
-            'Deutsch': ['region-eu'],
-            'Russisch': ['region-eu', 'region-as'],
-            'Japanisch': ['region-as'],
-            'Chinesisch': ['region-as']
+        /* Zuordnung der Amtssprachen-Länder zur präzisen SVG-Selektion */
+        const LANG_COUNTRIES = {
+            'Spanisch': ['cntr-ESP', 'cntr-ESP_SA', 'cntr-MEX'],
+            'Englisch': ['cntr-USA', 'cntr-CAN', 'cntr-GBR', 'cntr-AUS'],
+            'Französisch': ['cntr-FRA', 'cntr-CAN', 'cntr-AFR_NORTH'],
+            'Italienisch': ['cntr-ITA'],
+            'Portugiesisch': ['cntr-BRA'],
+            'Deutsch': ['cntr-DEU'],
+            'Russisch': ['cntr-RUS_EU'],
+            'Japanisch': ['cntr-JPN'],
+            'Chinesisch': ['cntr-CHN']
         };
 
         let mapVisible = true;
+        let isTabletMode = false;
 
         let appData = JSON.parse(localStorage.getItem('lingoVaultProData')) || {
             currentUser: 'Holger',
@@ -794,7 +775,6 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             initUserAndLang();
-            checkAndUpdateStreak();
             renderVocabList();
         });
 
@@ -802,48 +782,31 @@
             localStorage.setItem('lingoVaultProData', JSON.stringify(appData));
         }
 
+        /* Umschalten der Ansicht für iPhone 17 Pro / Galaxy Tab A11+ */
+        function toggleDeviceLayout() {
+            isTabletMode = !isTabletMode;
+            const btn = document.getElementById('deviceToggleBtn');
+            if (isTabletMode) {
+                document.body.className = 'device-tablet';
+                btn.textContent = '📱 Tab A11+';
+            } else {
+                document.body.className = 'device-phone';
+                btn.textContent = '📱 iPhone 17 Pro';
+            }
+        }
+
         function toggleWorldMap() {
             mapVisible = !mapVisible;
-            const bg = document.getElementById('worldMapBg');
+            const container = document.getElementById('worldMapContainer');
             const btn = document.getElementById('mapToggleBtn');
 
             if (mapVisible) {
-                bg.classList.remove('hidden-map');
+                container.classList.remove('hidden-map');
                 btn.textContent = '🗺️ Karte aus';
             } else {
-                bg.classList.add('hidden-map');
+                container.classList.add('hidden-map');
                 btn.textContent = '🗺️ Karte ein';
             }
-        }
-
-        function checkAndUpdateStreak() {
-            const today = new Date().toISOString().slice(0, 10);
-            if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 };
-            
-            if (appData.stats.lastActiveDate) {
-                const last = new Date(appData.stats.lastActiveDate);
-                const now = new Date(today);
-                const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-
-                if (diffDays > 1) {
-                    appData.stats.streakDays = 0;
-                }
-            }
-        }
-
-        function recordActivity() {
-            const today = new Date().toISOString().slice(0, 10);
-            if (!appData.stats.lastActiveDate) {
-                appData.stats.streakDays = 1;
-            } else if (appData.stats.lastActiveDate !== today) {
-                const last = new Date(appData.stats.lastActiveDate);
-                const now = new Date(today);
-                const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-                if (diffDays === 1) appData.stats.streakDays += 1;
-                else if (diffDays > 1) appData.stats.streakDays = 1;
-            }
-            appData.stats.lastActiveDate = today;
-            saveToLocalStorage();
         }
 
         function initUserAndLang() {
@@ -890,12 +853,12 @@
             document.getElementById('heroFlag').textContent = flag;
             document.getElementById('heroLangTitle').textContent = currentLang;
 
-            /* Karte aktualisieren & Regionen in unterschiedlichen Grautönen färben */
-            document.querySelectorAll('.region').forEach(el => el.classList.remove('active-region'));
-            const activeRegions = LANG_REGIONS[currentLang] || [];
-            activeRegions.forEach(regId => {
-                const el = document.getElementById(regId);
-                if (el) el.classList.add('active-region');
+            /* Amtssprachen-Länder auf der Detaillierten Karte in Hellgrau hervorheben */
+            document.querySelectorAll('.country').forEach(el => el.classList.remove('active-country'));
+            const activeCountries = LANG_COUNTRIES[currentLang] || [];
+            activeCountries.forEach(cntrId => {
+                const el = document.getElementById(cntrId);
+                if (el) el.classList.add('active-country');
             });
         }
 
@@ -1268,7 +1231,6 @@
         function checkAnswer() {
             if (!currentQuizItem) return;
 
-            recordActivity();
             if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0 };
             appData.stats.totalAnswered += 1;
 
