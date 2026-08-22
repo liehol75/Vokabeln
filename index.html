@@ -3,14 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>LingoVault – Vokabel & Grammatik Trainer</title>
+    <title>LingoVault Pro – Vokabel & Grammatik Trainer</title>
+    
+    <!-- iOS Web App Metadata -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LingoVault">
+    <link rel="apple-touch-icon" href="https://fav.farm/⚡">
+
     <style>
         :root {
             --primary: #6366f1;
             --primary-hover: #4f46e5;
             --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --card-border: rgba(255, 255, 255, 0.1);
+            --card-bg: rgba(30, 41, 59, 0.75);
+            --card-border: rgba(255, 255, 255, 0.12);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --accent-green: #10b981;
@@ -36,38 +43,45 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            padding-bottom: calc(80px + var(--safe-area-bottom));
+            padding-bottom: calc(85px + var(--safe-area-bottom));
         }
 
-        /* App Bar Header */
+        /* App Header */
         header {
-            padding: 20px 20px 10px;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             position: sticky;
             top: 0;
             z-index: 100;
+            border-bottom: 1px solid var(--card-border);
         }
 
         .brand {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 800;
             background: linear-gradient(135deg, #a5b4fc, #6366f1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .lang-selector {
+        .header-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .select-btn {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid var(--card-border);
             color: var(--text-main);
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: var(--radius-md);
             outline: none;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         /* Main Container */
@@ -79,7 +93,6 @@
             flex: 1;
         }
 
-        /* Card Elements */
         .glass-card {
             background: var(--card-bg);
             backdrop-filter: blur(16px);
@@ -87,35 +100,34 @@
             border: 1px solid var(--card-border);
             border-radius: var(--radius-lg);
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Tabs Navigation */
         .views-container {
             display: none;
         }
 
         .views-container.active {
             display: block;
-            animation: fadeIn 0.25s ease-in-out;
+            animation: fadeIn 0.2s ease-in-out;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(6px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Inputs & Form Styling */
+        /* Forms */
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         label {
             display: block;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 700;
@@ -123,34 +135,36 @@
 
         input, select, textarea {
             width: 100%;
-            background: rgba(0, 0, 0, 0.25);
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--card-border);
             border-radius: var(--radius-md);
-            padding: 14px;
+            padding: 12px;
             color: var(--text-main);
-            font-size: 1rem;
+            font-size: 0.95rem;
             outline: none;
-            transition: all 0.2s;
         }
 
         input:focus, textarea:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
 
         .btn {
             width: 100%;
-            padding: 15px;
+            padding: 14px;
             border: none;
             border-radius: var(--radius-md);
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .btn-primary {
@@ -159,21 +173,17 @@
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
         }
 
-        .btn-primary:active {
-            transform: scale(0.98);
-        }
-
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: var(--text-main);
         }
 
-        /* Vocabulary Item List */
+        /* Vocab List Items */
         .vocab-item {
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: var(--radius-md);
-            padding: 15px;
+            padding: 14px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
@@ -181,28 +191,135 @@
         }
 
         .vocab-word {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .vocab-trans {
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.88rem;
+            margin-top: 2px;
         }
 
         .badge {
             background: rgba(99, 102, 241, 0.2);
             color: #a5b4fc;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
             font-weight: 600;
-            margin-left: 8px;
         }
 
-        /* Quiz Trainer View */
+        .box-badge {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .audio-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px;
+        }
+
+        /* Conjugation Inspector Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #1e293b;
+            border-top: 1px solid var(--card-border);
+            border-radius: 24px 24px 0 0;
+            padding: 24px 20px calc(20px + var(--safe-area-bottom));
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .tense-tabs {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        .tense-tab {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .tense-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .conj-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+
+        .conj-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+
+        .conj-table td:first-child {
+            color: var(--text-muted);
+            width: 40%;
+            font-size: 0.85rem;
+        }
+
+        /* Quiz UI */
         .quiz-card {
-            min-height: 250px;
+            min-height: 260px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -211,43 +328,17 @@
             position: relative;
         }
 
-        .quiz-type {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
         .quiz-prompt {
-            font-size: 1.8rem;
+            font-size: 1.7rem;
             font-weight: 800;
-            margin: 20px 0 10px;
+            margin: 15px 0 5px;
         }
 
-        .quiz-subprompt {
-            color: #a5b4fc;
-            font-size: 1rem;
-            margin-bottom: 20px;
-        }
-
-        .quiz-answer {
-            width: 100%;
-            margin-top: 15px;
-            font-size: 1.2rem;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.4);
-        }
-
-        /* Bottom Fixed Navigation Bar (iOS Optimized) */
+        /* Navigation Bar */
         nav.bottom-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(15, 23, 42, 0.85);
+            bottom: 0; left: 0; right: 0;
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid var(--card-border);
@@ -264,8 +355,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            font-size: 0.75rem;
+            gap: 3px;
+            font-size: 0.7rem;
             cursor: pointer;
             width: 25%;
         }
@@ -275,56 +366,44 @@
             font-weight: 700;
         }
 
-        .nav-icon {
-            font-size: 1.3rem;
-        }
-
-        /* Conjugation Dynamic Fields */
-        .conj-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        .nav-icon { font-size: 1.2rem; }
+        .hidden { display: none !important; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- App Header -->
     <header>
         <div class="brand">LingoVault ⚡</div>
-        <select id="languageSelect" class="lang-selector" onchange="switchLanguage()">
-            <!-- Dynamic Languages -->
-        </select>
+        <div class="header-controls">
+            <select id="userSelect" class="select-btn" onchange="switchUser()">
+                <option value="Holger">👤 Holger</option>
+                <option value="Sanni">👤 Sanni</option>
+            </select>
+            <select id="languageSelect" class="select-btn" onchange="switchLanguage()"></select>
+        </div>
     </header>
 
     <!-- Main Container -->
     <main>
-
         <!-- VIEW 1: VOCABULARY LIST -->
         <section id="view-list" class="views-container active">
-            <div class="glass-card" style="display: flex; gap: 10px; align-items: center;">
+            <div class="glass-card" style="display: flex; gap: 8px;">
                 <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen..." oninput="renderVocabList()">
-                <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 18px;">+</button>
+                <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 16px;">+</button>
             </div>
-
-            <div id="vocabList">
-                <!-- Vokabel-Einträge werden hier injiziert -->
-            </div>
+            <div id="vocabList"></div>
         </section>
 
         <!-- VIEW 2: ADD / EDIT VOCABULARY -->
         <section id="view-add" class="views-container">
             <div class="glass-card">
-                <h2 style="margin-bottom: 15px;" id="formTitle">Neue Vokabel eintragen</h2>
+                <h2 style="margin-bottom: 15px;">Vokabel eintragen</h2>
                 <form id="vocabForm" onsubmit="saveVocab(event)">
                     <div class="form-group">
-                        <label>Wort / Phrase</label>
-                        <input type="text" id="inputWord" placeholder="z. B. hablar" required>
+                        <label>Wort / Phrase / Verb (Infinitiv)</label>
+                        <input type="text" id="inputWord" placeholder="z. B. hablar / to speak" required>
                     </div>
 
                     <div class="form-group">
@@ -336,24 +415,40 @@
                         <label>Wortart</label>
                         <select id="inputType" onchange="toggleVerbFields()">
                             <option value="substantiv">Substantiv / Sonstige</option>
-                            <option value="verb">Verb (mit Konjugation)</option>
+                            <option value="verb">Verb (mit Konjugationstabelle)</option>
                         </select>
                     </div>
 
-                    <!-- Verbs Conjugation Section -->
+                    <!-- Verb Conjugation Grid -->
                     <div id="conjSection" class="hidden">
-                        <label>Konjugationsformen (optional)</label>
-                        <div class="conj-grid">
-                            <input type="text" id="conjPres" placeholder="Präsens (z.B. hablo)">
-                            <input type="text" id="conjPast" placeholder="Präteritum (z.B. hablé)">
-                            <input type="text" id="conjPerf" placeholder="Perfekt (z.B. hablado)">
-                            <input type="text" id="conjFut" placeholder="Futur (z.B. hablaré)">
+                        <label style="color: #a5b4fc; margin-top: 10px;">Konjugation Präsens (Gegenwart)</label>
+                        <div class="grid-2">
+                            <input type="text" id="c_pres_1" placeholder="1. Sg (yo / I)">
+                            <input type="text" id="c_pres_2" placeholder="2. Sg (tú / you)">
+                            <input type="text" id="c_pres_3" placeholder="3. Sg (él / he)">
+                            <input type="text" id="c_pres_4" placeholder="1. Pl (nosotros / we)">
+                            <input type="text" id="c_pres_5" placeholder="2. Pl (vosotros / you)">
+                            <input type="text" id="c_pres_6" placeholder="3. Pl (ellos / they)">
                         </div>
+
+                        <label style="color: #a5b4fc; margin-top: 10px;">Konjugation Präteritum (Vergangenheit)</label>
+                        <div class="grid-2">
+                            <input type="text" id="c_past_1" placeholder="1. Sg">
+                            <input type="text" id="c_past_3" placeholder="3. Sg">
+                        </div>
+
+                        <label style="color: #a5b4fc; margin-top: 10px;">Perfekt (Partizip)</label>
+                        <input type="text" id="c_perf" placeholder="z. B. hablado / spoken">
                     </div>
 
-                    <div class="form-group" style="margin-top: 15px;">
+                    <div class="form-group" style="margin-top: 12px;">
+                        <label>Beispielsatz (Optional)</label>
+                        <textarea id="inputExample" rows="2" placeholder="z. B. Yo hablo español con mis amigos."></textarea>
+                    </div>
+
+                    <div class="form-group">
                         <label>Grammatikregel / Notizen</label>
-                        <textarea id="inputGrammar" rows="2" placeholder="z. B. Regelmäßiges Verb auf -ar"></textarea>
+                        <input type="text" id="inputGrammar" placeholder="z. B. Regelmäßiges Verb auf -ar">
                     </div>
 
                     <button type="submit" class="btn btn-primary">Vokabel Speichern</button>
@@ -364,11 +459,14 @@
         <!-- VIEW 3: QUIZ / TRAINER -->
         <section id="view-quiz" class="views-container">
             <div class="glass-card quiz-card">
-                <div id="quizType" class="quiz-type">Übersetzung</div>
+                <div id="quizBadge" class="badge">Box 1</div>
                 <div id="quizPrompt" class="quiz-prompt">---</div>
-                <div id="quizSubprompt" class="quiz-subprompt">---</div>
+                <div id="quizSubprompt" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">---</div>
                 
-                <input type="text" id="quizInput" class="quiz-answer" placeholder="Deine Antwort..." autocomplete="off">
+                <button id="hintBtn" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem; margin-bottom: 10px;" onclick="toggleHint()">💡 Beispielsatz anzeigen</button>
+                <div id="quizHint" style="font-style: italic; color: #a5b4fc; font-size: 0.85rem; margin-bottom: 15px;" class="hidden"></div>
+
+                <input type="text" id="quizInput" placeholder="Deine Antwort..." autocomplete="off">
                 <button class="btn btn-primary" style="margin-top: 15px;" onclick="checkAnswer()">Prüfen</button>
             </div>
 
@@ -382,21 +480,21 @@
         <!-- VIEW 4: SETTINGS / BACKUP -->
         <section id="view-settings" class="views-container">
             <div class="glass-card">
-                <h2 style="margin-bottom: 15px;">Sprachen & Daten</h2>
+                <h2 style="margin-bottom: 15px;">Einstellungen & Backup</h2>
                 
                 <div class="form-group">
-                    <label>Neue Sprache hinzufügen</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="newLangInput" placeholder="z. B. Spanisch">
-                        <button class="btn btn-primary" style="width: auto;" onclick="addLanguage()">Hinzufügen</button>
+                    <label>Neue Sprache für <span id="settingsUser">Nutzer</span> hinzufügen</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="newLangInput" placeholder="z. B. Italienisch">
+                        <button class="btn btn-primary" style="width: auto;" onclick="addLanguage()">+</button>
                     </div>
                 </div>
 
                 <hr style="border-color: var(--card-border); margin: 20px 0;">
 
-                <h3 style="margin-bottom: 10px; font-size: 1rem;">Geräte-Wechsel & Backup</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
-                    Lade deine Daten als Datei herunter, um sie auf einem anderen Gerät einzuspielen.
+                <h3 style="margin-bottom: 10px; font-size: 0.95rem;">Daten-Export & Import</h3>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 15px;">
+                    Sichere deine Vokabeln als Datei, um sie auf ein anderes Gerät zu übertragen.
                 </p>
 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -406,8 +504,32 @@
                 </div>
             </div>
         </section>
-
     </main>
+
+    <!-- CONJUGATION INSPECTOR MODAL -->
+    <div id="conjModal" class="modal-overlay" onclick="closeModalOnOuterClick(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalVerbTitle" style="font-size: 1.4rem;">Verb</h2>
+                    <div id="modalVerbTrans" style="color: var(--text-muted); font-size: 0.9rem;">Übersetzung</div>
+                </div>
+                <button onclick="closeConjModal()" style="background:none; border:none; color: var(--text-main); font-size: 1.5rem; cursor:pointer;">✕</button>
+            </div>
+
+            <!-- Tense Selector Tabs -->
+            <div class="tense-tabs">
+                <button class="tense-tab active" onclick="switchTense('pres', this)">Präsens</button>
+                <button class="tense-tab" onclick="switchTense('past', this)">Präteritum</button>
+                <button class="tense-tab" onclick="switchTense('perf', this)">Perfekt</button>
+            </div>
+
+            <!-- Conjugation Content Table -->
+            <table class="conj-table" id="modalConjTable">
+                <!-- Content generated via JS -->
+            </table>
+        </div>
+    </div>
 
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
@@ -417,7 +539,7 @@
         </button>
         <button class="nav-item" onclick="switchTab('add', this)">
             <span class="nav-icon">➕</span>
-            <span>Hinzufügen</span>
+            <span>Neu</span>
         </button>
         <button class="nav-item" onclick="switchTab('quiz', this)">
             <span class="nav-icon">🎯</span>
@@ -429,27 +551,84 @@
         </button>
     </nav>
 
-    <!-- Application Script Logic -->
+    <!-- JS Application Engine -->
     <script>
-        // State Management
-        let appData = JSON.parse(localStorage.getItem('lingoVaultData')) || {
-            currentLang: 'Spanisch',
-            languages: ['Spanisch', 'Französisch', 'Englisch'],
+        // Default Data Structure
+        let appData = JSON.parse(localStorage.getItem('lingoVaultProData')) || {
+            currentUser: 'Holger',
+            userLangs: {
+                'Holger': 'Spanisch',
+                'Sanni': 'Englisch'
+            },
+            languages: {
+                'Holger': ['Spanisch'],
+                'Sanni': ['Englisch']
+            },
             vocabularies: []
         };
 
+        let currentActiveVerb = null;
         let currentQuizItem = null;
-        let currentQuizMode = 'translation'; // 'translation' oder 'conjugation'
 
-        // Initialization
         document.addEventListener('DOMContentLoaded', () => {
-            renderLanguageDropdown();
+            initUserAndLang();
             renderVocabList();
-            saveToLocalStorage();
         });
 
         function saveToLocalStorage() {
-            localStorage.setItem('lingoVaultData', JSON.stringify(appData));
+            localStorage.setItem('lingoVaultProData', JSON.stringify(appData));
+        }
+
+        // State Init
+        function initUserAndLang() {
+            document.getElementById('userSelect').value = appData.currentUser;
+            renderLanguageDropdown();
+            document.getElementById('settingsUser').textContent = appData.currentUser;
+        }
+
+        function switchUser() {
+            appData.currentUser = document.getElementById('userSelect').value;
+            renderLanguageDropdown();
+            document.getElementById('settingsUser').textContent = appData.currentUser;
+            saveToLocalStorage();
+            renderVocabList();
+        }
+
+        function renderLanguageDropdown() {
+            const select = document.getElementById('languageSelect');
+            select.innerHTML = '';
+            const userLangs = appData.languages[appData.currentUser] || ['Standard'];
+            
+            userLangs.forEach(lang => {
+                const opt = document.createElement('option');
+                opt.value = lang;
+                opt.textContent = lang;
+                if (lang === appData.userLangs[appData.currentUser]) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function switchLanguage() {
+            const selectedLang = document.getElementById('languageSelect').value;
+            appData.userLangs[appData.currentUser] = selectedLang;
+            saveToLocalStorage();
+            renderVocabList();
+        }
+
+        function addLanguage() {
+            const input = document.getElementById('newLangInput');
+            const val = input.value.trim();
+            if (val) {
+                if (!appData.languages[appData.currentUser]) appData.languages[appData.currentUser] = [];
+                if (!appData.languages[appData.currentUser].includes(val)) {
+                    appData.languages[appData.currentUser].push(val);
+                    appData.userLangs[appData.currentUser] = val;
+                    saveToLocalStorage();
+                    renderLanguageDropdown();
+                    renderVocabList();
+                }
+                input.value = '';
+            }
         }
 
         // View Navigation
@@ -464,47 +643,9 @@
             if (viewId === 'list') renderVocabList();
         }
 
-        // Language Handling
-        function renderLanguageDropdown() {
-            const select = document.getElementById('languageSelect');
-            select.innerHTML = '';
-            appData.languages.forEach(lang => {
-                const opt = document.createElement('option');
-                opt.value = lang;
-                opt.textContent = lang;
-                if (lang === appData.currentLang) opt.selected = true;
-                select.appendChild(opt);
-            });
-        }
-
-        function switchLanguage() {
-            appData.currentLang = document.getElementById('languageSelect').value;
-            saveToLocalStorage();
-            renderVocabList();
-        }
-
-        function addLanguage() {
-            const input = document.getElementById('newLangInput');
-            const val = input.value.trim();
-            if (val && !appData.languages.includes(val)) {
-                appData.languages.push(val);
-                appData.currentLang = val;
-                input.value = '';
-                saveToLocalStorage();
-                renderLanguageDropdown();
-                renderVocabList();
-            }
-        }
-
-        // Form Logic
         function toggleVerbFields() {
             const type = document.getElementById('inputType').value;
-            const conjSection = document.getElementById('conjSection');
-            if (type === 'verb') {
-                conjSection.classList.remove('hidden');
-            } else {
-                conjSection.classList.add('hidden');
-            }
+            document.getElementById('conjSection').className = type === 'verb' ? '' : 'hidden';
         }
 
         function openAddModal() {
@@ -513,25 +654,36 @@
             switchTab('add', document.querySelectorAll('.nav-item')[1]);
         }
 
+        // Save Vocabulary
         function saveVocab(e) {
             e.preventDefault();
-            const word = document.getElementById('inputWord').value.trim();
-            const translation = document.getElementById('inputTranslation').value.trim();
+            const currentLang = appData.userLangs[appData.currentUser];
             const type = document.getElementById('inputType').value;
-            const grammar = document.getElementById('inputGrammar').value.trim();
 
             const newEntry = {
                 id: Date.now(),
-                lang: appData.currentLang,
-                word,
-                translation,
-                type,
-                grammar,
+                user: appData.currentUser,
+                lang: currentLang,
+                word: document.getElementById('inputWord').value.trim(),
+                translation: document.getElementById('inputTranslation').value.trim(),
+                type: type,
+                example: document.getElementById('inputExample').value.trim(),
+                grammar: document.getElementById('inputGrammar').value.trim(),
+                box: 1, // Spaced Repetition Box (1 - 5)
                 conjugations: type === 'verb' ? {
-                    pres: document.getElementById('conjPres').value.trim(),
-                    past: document.getElementById('conjPast').value.trim(),
-                    perf: document.getElementById('conjPerf').value.trim(),
-                    fut: document.getElementById('conjFut').value.trim(),
+                    pres: [
+                        document.getElementById('c_pres_1').value.trim(),
+                        document.getElementById('c_pres_2').value.trim(),
+                        document.getElementById('c_pres_3').value.trim(),
+                        document.getElementById('c_pres_4').value.trim(),
+                        document.getElementById('c_pres_5').value.trim(),
+                        document.getElementById('c_pres_6').value.trim()
+                    ],
+                    past: [
+                        document.getElementById('c_past_1').value.trim(),
+                        document.getElementById('c_past_3').value.trim()
+                    ],
+                    perf: document.getElementById('c_perf').value.trim()
                 } : null
             };
 
@@ -541,19 +693,21 @@
             switchTab('list', document.querySelectorAll('.nav-item')[0]);
         }
 
-        // List Rendering
+        // Render Vocab List
         function renderVocabList() {
             const container = document.getElementById('vocabList');
             const search = document.getElementById('searchInput').value.toLowerCase();
+            const currentLang = appData.userLangs[appData.currentUser];
             container.innerHTML = '';
 
             const filtered = appData.vocabularies.filter(v => 
-                v.lang === appData.currentLang && 
+                v.user === appData.currentUser && 
+                v.lang === currentLang && 
                 (v.word.toLowerCase().includes(search) || v.translation.toLowerCase().includes(search))
             );
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding: 40px 0;">Keine Vokabeln gefunden.</div>`;
+                container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding: 40px 0;">Keine Vokabeln vorhanden.</div>`;
                 return;
             }
 
@@ -561,12 +715,20 @@
                 const div = document.createElement('div');
                 div.className = 'vocab-item';
                 div.innerHTML = `
-                    <div>
-                        <div class="vocab-word">${item.word} <span class="badge">${item.type}</span></div>
+                    <div style="flex: 1;">
+                        <div class="vocab-word">
+                            <span>${item.word}</span>
+                            <span class="badge">${item.type}</span>
+                            <span class="box-badge">Box ${item.box || 1}</span>
+                            <button class="audio-btn" onclick="speakText('${item.word}')">🔊</button>
+                        </div>
                         <div class="vocab-trans">${item.translation}</div>
-                        ${item.grammar ? `<div style="font-size: 0.75rem; color: #a5b4fc; margin-top:4px;">💡 ${item.grammar}</div>` : ''}
+                        ${item.example ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">💬 "${item.example}"</div>` : ''}
                     </div>
-                    <button onclick="deleteVocab(${item.id})" style="background:none; border:none; color: var(--accent-red); font-size:1.2rem; cursor:pointer;">🗑️</button>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        ${item.type === 'verb' ? `<button class="btn btn-secondary" style="padding:6px 10px; width:auto; font-size:0.8rem;" onclick="openConjModal(${item.id})">🔍 Formen</button>` : ''}
+                        <button onclick="deleteVocab(${item.id})" style="background:none; border:none; color: var(--accent-red); font-size:1.1rem; cursor:pointer; padding: 4px;">🗑️</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
@@ -578,50 +740,121 @@
             renderVocabList();
         }
 
-        // Quiz Engine
+        // Conjugation Modal Inspector Logic
+        function openConjModal(id) {
+            currentActiveVerb = appData.vocabularies.find(v => v.id === id);
+            if (!currentActiveVerb) return;
+
+            document.getElementById('modalVerbTitle').textContent = currentActiveVerb.word;
+            document.getElementById('modalVerbTrans').textContent = currentActiveVerb.translation;
+            
+            switchTense('pres', document.querySelectorAll('.tense-tab')[0]);
+            document.getElementById('conjModal').classList.add('active');
+        }
+
+        function closeConjModal() {
+            document.getElementById('conjModal').classList.remove('active');
+        }
+
+        function closeModalOnOuterClick(e) {
+            if (e.target.id === 'conjModal') closeConjModal();
+        }
+
+        function switchTense(tense, tabBtn) {
+            document.querySelectorAll('.tense-tab').forEach(b => b.classList.remove('active'));
+            if(tabBtn) tabBtn.classList.add('active');
+
+            const table = document.getElementById('modalConjTable');
+            table.innerHTML = '';
+
+            const isSpanish = appData.userLangs[appData.currentUser] === 'Spanisch';
+            const persons = isSpanish ? 
+                ['yo', 'tú', 'él / ella / ud.', 'nosotros', 'vosotros', 'ellos / ellas'] : 
+                ['I', 'you', 'he / she / it', 'we', 'you (all)', 'they'];
+
+            const conjs = currentActiveVerb.conjugations;
+
+            if (tense === 'pres' && conjs && conjs.pres) {
+                conjs.pres.forEach((val, idx) => {
+                    if (val) addConjRow(table, persons[idx], val);
+                });
+            } else if (tense === 'past' && conjs && conjs.past) {
+                if (conjs.past[0]) addConjRow(table, persons[0] + ' / ' + persons[1], conjs.past[0]);
+                if (conjs.past[1]) addConjRow(table, persons[2], conjs.past[1]);
+            } else if (tense === 'perf' && conjs && conjs.perf) {
+                addConjRow(table, 'Partizip Perfekt', conjs.perf);
+            }
+
+            if (table.innerHTML === '') {
+                table.innerHTML = `<tr><td colspan="2" style="text-align:center; color:var(--text-muted);">Keine Formen eingetragen.</td></tr>`;
+            }
+        }
+
+        function addConjRow(table, label, val) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${label}</td>
+                <td style="font-weight:700; color:#a5b4fc;">
+                    ${val} <button class="audio-btn" onclick="speakText('${val}')">🔊</button>
+                </td>
+            `;
+            table.appendChild(tr);
+        }
+
+        // Text To Speech
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                const currentLang = appData.userLangs[appData.currentUser];
+                if (currentLang === 'Spanisch') utterance.lang = 'es-ES';
+                else if (currentLang === 'Englisch') utterance.lang = 'en-US';
+                else if (currentLang === 'Französisch') utterance.lang = 'fr-FR';
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Quiz Engine with SRS Box Support
         function startQuiz() {
-            const available = appData.vocabularies.filter(v => v.lang === appData.currentLang);
-            const feedback = document.getElementById('quizFeedback');
-            feedback.classList.add('hidden');
+            const currentLang = appData.userLangs[appData.currentUser];
+            const available = appData.vocabularies.filter(v => v.user === appData.currentUser && v.lang === currentLang);
+            
+            document.getElementById('quizFeedback').classList.add('hidden');
+            document.getElementById('quizHint').classList.add('hidden');
             document.getElementById('quizInput').value = '';
 
             if (available.length === 0) {
                 document.getElementById('quizPrompt').textContent = "Keine Vokabeln";
-                document.getElementById('quizSubprompt').textContent = "Füge zuerst Vokabeln hinzu!";
+                document.getElementById('quizSubprompt').textContent = "Trage erst Vokabeln ein!";
                 return;
             }
 
-            // Pick random Vocab
-            currentQuizItem = available[Math.floor(Math.random() * available.length)];
+            // Weighted selection (Lower boxes are prioritized)
+            available.sort((a, b) => (a.box || 1) - (b.box || 1));
+            currentQuizItem = available[Math.floor(Math.random() * Math.min(available.length, 3))];
 
-            // Determine Quiz Mode (Standard Translation vs. Conjugation)
-            const hasConjugations = currentQuizItem.conjugations && Object.values(currentQuizItem.conjugations).some(c => c !== "");
-            
-            if (hasConjugations && Math.random() > 0.5) {
-                currentQuizMode = 'conjugation';
-                const validForms = Object.keys(currentQuizItem.conjugations).filter(k => currentQuizItem.conjugations[k] !== "");
-                const randomFormKey = validForms[Math.floor(Math.random() * validForms.length)];
-                
-                const formLabels = { pres: 'Präsens', past: 'Präteritum', perf: 'Perfekt', fut: 'Futur' };
-                
-                document.getElementById('quizType').textContent = `Konjugation (${formLabels[randomFormKey]})`;
-                document.getElementById('quizPrompt').textContent = currentQuizItem.word;
-                document.getElementById('quizSubprompt').textContent = `Übersetzung: ${currentQuizItem.translation}`;
-                currentQuizItem.targetAnswer = currentQuizItem.conjugations[randomFormKey];
+            document.getElementById('quizBadge').textContent = `Box ${currentQuizItem.box || 1}`;
+            document.getElementById('quizPrompt').textContent = currentQuizItem.word;
+            document.getElementById('quizSubprompt').textContent = currentQuizItem.grammar ? `Hinweis: ${currentQuizItem.grammar}` : "Wie lautet die Übersetzung?";
+
+            if (currentQuizItem.example) {
+                document.getElementById('hintBtn').classList.remove('hidden');
+                // Replace word in example with blank ___
+                const blankExample = currentQuizItem.example.replace(new RegExp(currentQuizItem.word, 'gi'), '_____');
+                document.getElementById('quizHint').textContent = `"${blankExample}"`;
             } else {
-                currentQuizMode = 'translation';
-                document.getElementById('quizType').textContent = "Übersetzung";
-                document.getElementById('quizPrompt').textContent = currentQuizItem.word;
-                document.getElementById('quizSubprompt').textContent = currentQuizItem.grammar ? `Grammatik: ${currentQuizItem.grammar}` : "Wie lautet die Übersetzung?";
-                currentQuizItem.targetAnswer = currentQuizItem.translation;
+                document.getElementById('hintBtn').classList.add('hidden');
             }
+        }
+
+        function toggleHint() {
+            document.getElementById('quizHint').classList.toggle('hidden');
         }
 
         function checkAnswer() {
             if (!currentQuizItem) return;
 
             const input = document.getElementById('quizInput').value.trim().toLowerCase();
-            const target = currentQuizItem.targetAnswer.trim().toLowerCase();
+            const target = currentQuizItem.translation.trim().toLowerCase();
             const feedback = document.getElementById('quizFeedback');
             const resTitle = document.getElementById('feedbackResult');
             const resDetail = document.getElementById('feedbackDetail');
@@ -631,12 +864,15 @@
             if (input === target) {
                 resTitle.textContent = "Richtig! 🎉";
                 resTitle.style.color = "var(--accent-green)";
-                resDetail.textContent = `Ausgezeichnete Antwort.`;
+                resDetail.textContent = `Aufstieg in Box ${Math.min((currentQuizItem.box || 1) + 1, 5)}!`;
+                currentQuizItem.box = Math.min((currentQuizItem.box || 1) + 1, 5);
             } else {
                 resTitle.textContent = "Falsch! ❌";
                 resTitle.style.color = "var(--accent-red)";
-                resDetail.textContent = `Richtig wäre gewesen: "${currentQuizItem.targetAnswer}"`;
+                resDetail.textContent = `Richtig ist: "${currentQuizItem.translation}" (Zurück in Box 1)`;
+                currentQuizItem.box = 1;
             }
+            saveToLocalStorage();
         }
 
         function nextQuestion() {
@@ -657,14 +893,12 @@
             fileReader.onload = function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    if (imported.vocabularies && imported.languages) {
+                    if (imported.vocabularies) {
                         appData = imported;
                         saveToLocalStorage();
-                        renderLanguageDropdown();
+                        initUserAndLang();
                         renderVocabList();
                         alert('Daten erfolgreich importiert!');
-                    } else {
-                        alert('Ungültiges Dateiformat.');
                     }
                 } catch (err) {
                     alert('Fehler beim Lesen der Datei.');
@@ -675,4 +909,3 @@
     </script>
 </body>
 </html>
-
