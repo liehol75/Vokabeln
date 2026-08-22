@@ -10,6 +10,10 @@
     <meta name="apple-mobile-web-app-title" content="LingoVault">
     <link rel="apple-touch-icon" href="https://fav.farm/⚡">
 
+    <!-- D3.js & TopoJSON -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
     <style>
         :root {
             --primary: #6366f1;
@@ -25,12 +29,9 @@
             --radius-lg: 20px;
             --radius-md: 12px;
             --safe-area-bottom: env(safe-area-inset-bottom, 20px);
-            
-            /* Dynamische Containerbreite für Smartphone (iPhone 17 Pro) */
             --container-width: 430px;
         }
 
-        /* Layout-Anpassung für Tablet (Samsung Galaxy Tab A11+) */
         body.device-tablet {
             --container-width: 850px;
         }
@@ -146,11 +147,9 @@
             cursor: pointer;
         }
 
-        /* Gesonderte, zentrierte Weltkarte */
         .world-map-container {
             width: 100%;
-            max-width: 100%;
-            height: 200px;
+            height: 220px;
             margin: 10px 0;
             display: flex;
             align-items: center;
@@ -158,12 +157,13 @@
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: var(--radius-md);
-            padding: 10px;
+            overflow: hidden;
+            position: relative;
             transition: all 0.3s ease;
         }
 
         body.device-tablet .world-map-container {
-            height: 300px;
+            height: 340px;
         }
 
         .world-map-container.hidden-map {
@@ -175,18 +175,17 @@
             height: 100%;
         }
 
-        /* Hochauflösende Vektor-Ländergrenzen */
-        .country {
-            fill: #1e293b; /* Inaktive Länder: Sehr dunkles Anthrazit */
+        .country-shape {
+            fill: #1e293b;
             stroke: #334155;
-            stroke-width: 0.7;
+            stroke-width: 0.5;
             transition: fill 0.4s ease, stroke 0.4s ease;
         }
 
-        .country.active-country {
-            fill: #94a3b8 !important; /* Aktive Amtssprachen-Länder: Helles Silbergrau */
-            stroke: #f8fafc !important;
-            stroke-width: 1.2;
+        .country-shape.active-country {
+            fill: #6366f1 !important;
+            stroke: #a5b4fc !important;
+            stroke-width: 1;
         }
 
         .hero-info {
@@ -293,6 +292,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-wrap: wrap;
         }
 
         .vocab-trans { color: var(--text-muted); font-size: 0.88rem; margin-top: 2px; }
@@ -436,7 +436,6 @@
     <header>
         <div class="brand">LingoVault ⚡</div>
         <div class="header-controls">
-            <!-- Responsive Geräteschalter -->
             <button class="device-btn" id="deviceToggleBtn" onclick="toggleDeviceLayout()">📱 iPhone 17 Pro</button>
             <select id="userSelect" class="select-btn" onchange="switchUser()">
                 <option value="Holger">👤 Holger</option>
@@ -447,44 +446,16 @@
     </header>
 
     <main>
-        <!-- VIEW 1: VOCABULARY LIST (STARTSEITE) -->
+        <!-- VIEW 1: VOCABULARY LIST -->
         <section id="view-list" class="views-container active">
             <div class="hero-banner">
                 <div class="hero-header-actions">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">AMTSPRACEN-VERBREITUNG</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">AMTSSPRACHEN-VERBREITUNG</span>
                     <button class="map-toggle-btn" id="mapToggleBtn" onclick="toggleWorldMap()">🗺️ Karte aus</button>
                 </div>
                 
-                <!-- Gesonderte, hochauflösende Vektor-Weltkarte -->
                 <div class="world-map-container" id="worldMapContainer">
-                    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
-                        <!-- NORDAMERIKA -->
-                        <path id="cntr-CAN" class="country" d="M120,40 L300,30 L290,110 L150,120 Z"/>
-                        <path id="cntr-USA" class="country" d="M150,125 L295,115 L285,190 L170,200 Z"/>
-                        <path id="cntr-MEX" class="country" d="M175,205 L235,195 L255,250 L205,260 Z"/>
-
-                        <!-- SÜDAMERIKA -->
-                        <path id="cntr-ESP_SA_NORTH" class="country" d="M260,255 L310,255 L320,290 L260,290 Z"/> <!-- Kolumbien / Venezuela -->
-                        <path id="cntr-BRA" class="country" d="M325,260 L380,275 L370,380 L310,340 Z"/> <!-- Brasilien -->
-                        <path id="cntr-ESP_SA_SOUTH" class="country" d="M260,295 L305,295 L295,420 L270,420 Z"/> <!-- Peru / Chile / Argentinien -->
-
-                        <!-- EUROPA -->
-                        <path id="cntr-GBR" class="country" d="M465,95 L490,95 L485,120 L460,120 Z"/> <!-- UK -->
-                        <path id="cntr-FRA" class="country" d="M485,125 L515,125 L510,155 L480,150 Z"/> <!-- Frankreich -->
-                        <path id="cntr-ESP" class="country" d="M455,155 L485,155 L480,180 L450,175 Z"/> <!-- Spanien -->
-                        <path id="cntr-DEU" class="country" d="M518,105 L545,105 L540,135 L515,135 Z"/> <!-- Deutschland -->
-                        <path id="cntr-ITA" class="country" d="M520,140 L540,140 L535,175 L518,165 Z"/> <!-- Italien -->
-                        <path id="cntr-RUS" class="country" d="M550,60 L780,50 L750,140 L550,125 Z"/> <!-- Russland -->
-
-                        <!-- AFRIKA -->
-                        <path id="cntr-AFR_NORTH" class="country" d="M450,185 L590,185 L580,270 L450,250 Z"/>
-                        <path id="cntr-AFR_SOUTH" class="country" d="M490,275 L580,275 L560,380 L500,370 Z"/>
-
-                        <!-- ASIEN & OZEANIEN -->
-                        <path id="cntr-CHN" class="country" d="M700,145 L830,145 L810,230 L690,210 Z"/>
-                        <path id="cntr-JPN" class="country" d="M840,140 L865,140 L855,195 L835,195 Z"/>
-                        <path id="cntr-AUS" class="country" d="M770,320 L890,320 L870,430 L750,410 Z"/>
-                    </svg>
+                    <svg id="worldMapSvg"></svg>
                 </div>
                 
                 <div class="hero-info">
@@ -606,7 +577,7 @@
 
                 <div style="width: 100%; display: flex; gap: 8px;">
                     <input type="text" id="quizInput" placeholder="Deine Antwort..." autocomplete="off" onkeydown="if(event.key==='Enter') checkAnswer()">
-                    <button class="btn btn-secondary" style="width: auto; padding: 0 15px;" onclick="speakQuizWord()">🔊</button>
+                    <button class="btn btn-secondary" style="width: auto; padding: 0 15px;" id="quizAudioBtn" onclick="speakQuizWord()">🔊</button>
                 </div>
                 <button class="btn btn-primary" style="margin-top: 12px;" id="quizCheckBtn" onclick="checkAnswer()">Prüfen</button>
             </div>
@@ -743,21 +714,21 @@
             'Chinesisch': '🇨🇳'
         };
 
-        /* Zuordnung der Amtssprachen-Länder zur präzisen Vektor-Selektion */
-        const LANG_COUNTRIES = {
-            'Spanisch': ['cntr-ESP', 'cntr-ESP_SA_NORTH', 'cntr-ESP_SA_SOUTH', 'cntr-MEX'],
-            'Englisch': ['cntr-USA', 'cntr-CAN', 'cntr-GBR', 'cntr-AUS'],
-            'Französisch': ['cntr-FRA', 'cntr-CAN', 'cntr-AFR_NORTH'],
-            'Italienisch': ['cntr-ITA'],
-            'Portugiesisch': ['cntr-BRA'],
-            'Deutsch': ['cntr-DEU'],
-            'Russisch': ['cntr-RUS'],
-            'Japanisch': ['cntr-JPN'],
-            'Chinesisch': ['cntr-CHN']
+        const LANG_ISO_CODES = {
+            'Spanisch': ["724", "484", "170", "032", "152", "604", "862", "218", "242", "320", "340", "558", "591", "600", "858", "068", "192", "214"],
+            'Englisch': ["840", "826", "124", "036", "554", "372", "710"],
+            'Französisch': ["250", "124", "056", "756", "384", "804"],
+            'Italienisch': ["380", "756"],
+            'Portugiesisch': ["076", "620", "024"],
+            'Deutsch': ["276", "040", "756"],
+            'Russisch': ["643", "112", "398"],
+            'Japanisch': ["392"],
+            'Chinesisch': ["156", "158"]
         };
 
         let mapVisible = true;
         let isTabletMode = false;
+        let worldDataGeoJSON = null;
 
         let appData = JSON.parse(localStorage.getItem('lingoVaultProData')) || {
             currentUser: 'Holger',
@@ -767,6 +738,11 @@
             vocabularies: []
         };
 
+        if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 };
+        if (!appData.languages) appData.languages = { 'Holger': ['Spanisch'], 'Sanni': ['Englisch'] };
+        if (!appData.languages['Holger']) appData.languages['Holger'] = ['Spanisch'];
+        if (!appData.languages['Sanni']) appData.languages['Sanni'] = ['Englisch'];
+
         let currentActiveVerb = null;
         let currentQuizItem = null;
         let currentQuizTargetAnswer = "";
@@ -774,13 +750,96 @@
         document.addEventListener('DOMContentLoaded', () => {
             initUserAndLang();
             renderVocabList();
+            initRealWorldMap();
+
+            const ro = new ResizeObserver(() => {
+                if (mapVisible && worldDataGeoJSON) {
+                    initRealWorldMap();
+                }
+            });
+            ro.observe(document.getElementById("worldMapContainer"));
         });
 
         function saveToLocalStorage() {
             localStorage.setItem('lingoVaultProData', JSON.stringify(appData));
         }
 
-        /* Umschalten der Ansicht für iPhone 17 Pro / Galaxy Tab A11+ */
+        function updateStreak() {
+            if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 };
+            
+            const today = new Date().toISOString().slice(0, 10);
+            const last = appData.stats.lastActiveDate;
+
+            if (!last) {
+                appData.stats.streakDays = 1;
+                appData.stats.lastActiveDate = today;
+            } else if (last !== today) {
+                const prev = new Date();
+                prev.setDate(prev.getDate() - 1);
+                const yesterday = prev.toISOString().slice(0, 10);
+
+                if (last === yesterday) {
+                    appData.stats.streakDays = (appData.stats.streakDays || 0) + 1;
+                } else {
+                    appData.stats.streakDays = 1;
+                }
+                appData.stats.lastActiveDate = today;
+            }
+        }
+
+        function initRealWorldMap() {
+            const container = document.getElementById("worldMapContainer");
+            const width = Math.max(container.clientWidth || 400, 300);
+            const height = Math.max(container.clientHeight || 220, 180);
+
+            const svg = d3.select("#worldMapSvg");
+            svg.selectAll("*").remove();
+            svg.attr("viewBox", `0 0 ${width} ${height}`);
+
+            const projection = d3.geoMercator()
+                .scale(width / 6.3)
+                .translate([width / 2, height / 1.4]);
+
+            const path = d3.geoPath().projection(projection);
+
+            if (worldDataGeoJSON) {
+                renderMapFeatures(svg, path);
+            } else {
+                d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(data => {
+                    worldDataGeoJSON = topojson.feature(data, data.objects.countries).features;
+                    renderMapFeatures(svg, path);
+                }).catch(err => {
+                    console.error("Fehler beim Laden der Karte:", err);
+                });
+            }
+        }
+
+        function renderMapFeatures(svg, path) {
+            svg.selectAll("path")
+                .data(worldDataGeoJSON)
+                .enter()
+                .append("path")
+                .attr("class", "country-shape")
+                .attr("id", d => `country-${String(d.id || '').padStart(3, '0')}`)
+                .attr("d", path);
+
+            updateMapHighlights();
+        }
+
+        function updateMapHighlights() {
+            if (!worldDataGeoJSON) return;
+
+            const currentLang = appData.userLangs[appData.currentUser] || 'Spanisch';
+            const activeIsoCodes = LANG_ISO_CODES[currentLang] || [];
+
+            d3.selectAll(".country-shape")
+                .classed("active-country", d => {
+                    if (!d || !d.id) return false;
+                    const isoCode = String(d.id).padStart(3, '0');
+                    return activeIsoCodes.includes(isoCode);
+                });
+        }
+
         function toggleDeviceLayout() {
             isTabletMode = !isTabletMode;
             const btn = document.getElementById('deviceToggleBtn');
@@ -791,6 +850,7 @@
                 document.body.className = 'device-phone';
                 btn.textContent = '📱 iPhone 17 Pro';
             }
+            setTimeout(initRealWorldMap, 300);
         }
 
         function toggleWorldMap() {
@@ -801,6 +861,7 @@
             if (mapVisible) {
                 container.classList.remove('hidden-map');
                 btn.textContent = '🗺️ Karte aus';
+                setTimeout(initRealWorldMap, 100);
             } else {
                 container.classList.add('hidden-map');
                 btn.textContent = '🗺️ Karte ein';
@@ -826,7 +887,7 @@
         function renderLanguageDropdown() {
             const select = document.getElementById('languageSelect');
             select.innerHTML = '';
-            const userLangs = appData.languages[appData.currentUser] || ['Standard'];
+            const userLangs = appData.languages[appData.currentUser] || ['Spanisch'];
             
             userLangs.forEach(lang => {
                 const opt = document.createElement('option');
@@ -851,13 +912,7 @@
             document.getElementById('heroFlag').textContent = flag;
             document.getElementById('heroLangTitle').textContent = currentLang;
 
-            /* Amtssprachen-Länder auf der Detaillierten Vektor-Karte hervorheben */
-            document.querySelectorAll('.country').forEach(el => el.classList.remove('active-country'));
-            const activeCountries = LANG_COUNTRIES[currentLang] || [];
-            activeCountries.forEach(cntrId => {
-                const el = document.getElementById(cntrId);
-                if (el) el.classList.add('active-country');
-            });
+            updateMapHighlights();
         }
 
         function addLanguage() {
@@ -1016,7 +1071,7 @@
                 if (item.conjugations.pres) {
                     item.conjugations.pres.forEach((val, i) => {
                         const el = document.getElementById(`c_pres_${i+1}`);
-                        if (el) el.value = val;
+                        if (el) el.value = val || '';
                     });
                 }
                 if (item.conjugations.past) {
@@ -1109,7 +1164,7 @@
                 ['yo', 'tú', 'él / ella / ud.', 'nosotros', 'vosotros', 'ellos / ellas'] : 
                 ['I', 'you', 'he / she / it', 'we', 'you (all)', 'they'];
 
-            const conjs = currentActiveVerb.conjugations;
+            const conjs = currentActiveVerb ? currentActiveVerb.conjugations : null;
 
             if (tense === 'pres' && conjs && conjs.pres) {
                 conjs.pres.forEach((val, idx) => {
@@ -1139,7 +1194,8 @@
         }
 
         function speakText(text) {
-            if ('speechSynthesis' in window) {
+            if ('speechSynthesis' in window && text) {
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 const currentLang = appData.userLangs[appData.currentUser];
                 if (currentLang === 'Spanisch') utterance.lang = 'es-ES';
@@ -1169,26 +1225,39 @@
             }
 
             if (dir === 'verb_conj') {
-                available = available.filter(v => v.type === 'verb' && v.conjugations && v.conjugations.pres);
+                available = available.filter(v => v.type === 'verb' && v.conjugations?.pres?.length === 6);
             }
 
             const card = document.getElementById('quizCard');
+            const quizInput = document.getElementById('quizInput');
+            const quizCheckBtn = document.getElementById('quizCheckBtn');
+            const quizAudioBtn = document.getElementById('quizAudioBtn');
+
             card.classList.remove('shake', 'correct-glow');
             document.getElementById('quizFeedback').classList.add('hidden');
             document.getElementById('quizHint').classList.add('hidden');
-            document.getElementById('quizInput').value = '';
-            document.getElementById('quizCheckBtn').disabled = false;
+            quizInput.value = '';
 
             if (available.length === 0) {
                 document.getElementById('quizPrompt').textContent = "Keine Vokabeln";
-                document.getElementById('quizSubprompt').textContent = filter === 'due' ? "Alle fälligen Wörter gelernt! 🎉" : "Trage erst Vokabeln ein!";
-                document.getElementById('quizDueBadge').classList.add('hidden');
+                document.getElementById('quizSubprompt').textContent = filter === 'due' ? "Alle fälligen Wörter gelernt! 🎉" : "Trage erst passende Vokabeln ein!";
+                document.getElementById('quizDueBadge').className = 'hidden';
+                document.getElementById('hintBtn').classList.add('hidden');
+                quizInput.disabled = true;
+                quizCheckBtn.disabled = true;
+                quizAudioBtn.disabled = true;
                 currentQuizItem = null;
                 return;
             }
 
+            quizInput.disabled = false;
+            quizCheckBtn.disabled = false;
+            quizAudioBtn.disabled = false;
+
             available.sort((a, b) => (a.box || 1) - (b.box || 1));
-            currentQuizItem = available[Math.floor(Math.random() * Math.min(available.length, 3))];
+            const poolSize = Math.min(available.length, 3);
+            const randomIndex = Math.floor(Math.random() * poolSize);
+            currentQuizItem = available[randomIndex];
 
             const isDue = !currentQuizItem.nextReview || currentQuizItem.nextReview <= Date.now();
             document.getElementById('quizDueBadge').className = isDue ? 'box-badge' : 'hidden';
@@ -1210,7 +1279,7 @@
                 
                 document.getElementById('quizPrompt').textContent = `${currentQuizItem.word} (${pLabel})`;
                 document.getElementById('quizSubprompt').textContent = "Konjugationsform Präsens:";
-                currentQuizTargetAnswer = currentQuizItem.conjugations.pres[pIndex] || currentQuizItem.word;
+                currentQuizTargetAnswer = (currentQuizItem.conjugations?.pres?.[pIndex]) ? currentQuizItem.conjugations.pres[pIndex] : currentQuizItem.word;
             }
 
             if (currentQuizItem.example) {
@@ -1229,8 +1298,10 @@
         function checkAnswer() {
             if (!currentQuizItem) return;
 
+            updateStreak();
+
             if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0 };
-            appData.stats.totalAnswered += 1;
+            appData.stats.totalAnswered = (appData.stats.totalAnswered || 0) + 1;
 
             const input = document.getElementById('quizInput').value.trim().toLowerCase();
             const target = currentQuizTargetAnswer.trim().toLowerCase();
@@ -1243,7 +1314,7 @@
             feedback.classList.remove('hidden');
 
             if (input === target) {
-                appData.stats.totalCorrect += 1;
+                appData.stats.totalCorrect = (appData.stats.totalCorrect || 0) + 1;
                 card.classList.add('correct-glow');
                 resTitle.textContent = "Richtig! 🎉";
                 resTitle.style.color = "var(--accent-green)";
@@ -1332,7 +1403,7 @@
 
             for (let i = 1; i <= 5; i++) {
                 const count = boxCounts[i] || 0;
-                const pct = list.length > 0 ? (count / list.length) * 100 : 20;
+                const pct = list.length > 0 ? (count / list.length) * 100 : 0;
 
                 const seg = document.createElement('div');
                 seg.className = 'box-bar-segment';
@@ -1359,15 +1430,17 @@
             fileReader.onload = function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    if (imported.vocabularies) {
+                    if (imported && Array.isArray(imported.vocabularies)) {
                         appData = imported;
                         saveToLocalStorage();
                         initUserAndLang();
                         renderVocabList();
                         alert('Daten erfolgreich importiert!');
+                    } else {
+                        throw new Error('Ungültiges Format');
                     }
                 } catch (err) {
-                    alert('Fehler beim Lesen der Backup-Datei.');
+                    alert('Fehler beim Lesen der Backup-Datei. Bitte erstelle ein gültiges JSON-Backup.');
                 }
             };
             fileReader.readAsText(event.target.files[0]);
@@ -1381,7 +1454,7 @@
             const currentLang = appData.userLangs[appData.currentUser];
             let addedCount = 0;
 
-            lines.forEach(line => {
+            lines.forEach((line, index) => {
                 const parts = line.split(';');
                 if (parts.length >= 2) {
                     const word = parts[0].trim();
@@ -1390,7 +1463,7 @@
 
                     if (word && trans) {
                         appData.vocabularies.push({
-                            id: Date.now() + Math.random(),
+                            id: Date.now() + index,
                             user: appData.currentUser,
                             lang: currentLang,
                             word: word,
