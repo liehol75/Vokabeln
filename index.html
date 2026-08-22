@@ -2,1486 +2,1108 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>LingoVault Ultra – Ultimate Trainer</title>
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LingoVault">
-    <link rel="apple-touch-icon" href="https://fav.farm/⚡">
-
-    <!-- D3.js & TopoJSON -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LingoVault Pro</title>
+    <!-- D3.js und TopoJSON für die Weltkarte -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg-color: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.85);
-            --card-border: rgba(255, 255, 255, 0.12);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
-            --accent-gold: #f59e0b;
-            --radius-lg: 20px;
-            --radius-md: 12px;
-            --safe-area-bottom: env(safe-area-inset-bottom, 20px);
-            --container-width: 430px;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --radius: 12px;
         }
 
-        body.device-tablet {
-            --container-width: 850px;
+        body.dark {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
         }
 
         * {
             box-sizing: border-box;
-            margin: 0; padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 70%);
-            color: var(--text-main);
-            min-height: 100vh;
+            background-color: var(--bg);
+            color: var(--text);
             display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-            padding-bottom: calc(85px + var(--safe-area-bottom));
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Container & Viewport Simulation */
+        .app-wrapper {
+            width: 100%;
+            max-width: 1200px;
             transition: all 0.3s ease;
+        }
+
+        .viewport-mobile {
+            max-width: 414px;
+            margin: 0 auto;
+            border: 8px solid #333;
+            border-radius: 36px;
+            padding: 10px;
+            background: var(--bg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .viewport-tablet {
+            max-width: 768px;
+            margin: 0 auto;
+            border: 12px solid #333;
+            border-radius: 24px;
+            padding: 15px;
+            background: var(--bg);
         }
 
         header {
-            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
-        .brand {
-            font-size: 1.3rem;
+        .logo {
+            font-size: 1.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #a5b4fc, #6366f1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .select-btn, .device-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            padding: 6px 10px;
-            border-radius: var(--radius-md);
-            outline: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        main {
-            max-width: var(--container-width);
-            width: 100%;
-            margin: 0 auto;
-            padding: 15px;
-            flex: 1;
-            transition: max-width 0.3s ease;
-        }
-
-        .glass-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .hero-banner {
-            text-align: center;
-            padding: 20px;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--card-border);
-            border-radius: var(--radius-lg);
-            margin-bottom: 15px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .hero-header-actions {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .map-toggle-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            cursor: pointer;
-        }
-
-        .world-map-container {
-            width: 100%;
-            height: 220px;
-            margin: 10px 0;
+            color: var(--primary);
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        body.device-tablet .world-map-container {
-            height: 340px;
-        }
-
-        .world-map-container.hidden-map {
-            display: none !important;
-        }
-
-        .world-map-container svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .country-shape {
-            fill: #1e293b;
-            stroke: #334155;
-            stroke-width: 0.5;
-            transition: fill 0.4s ease, stroke 0.4s ease;
-        }
-
-        .country-shape.active-country {
-            fill: #6366f1 !important;
-            stroke: #a5b4fc !important;
-            stroke-width: 1;
-        }
-
-        .hero-info {
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .lang-flag {
-            font-size: 3rem;
-            line-height: 1;
-            margin-bottom: 4px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-        }
-
-        .lang-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #a5b4fc;
-            margin-bottom: 12px;
-            letter-spacing: 0.5px;
-        }
-
-        .search-box-row {
-            width: 100%;
-            display: flex;
             gap: 8px;
         }
 
-        .views-container { display: none; }
-        .views-container.active { display: block; animation: fadeIn 0.2s ease-in-out; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-group { margin-bottom: 12px; }
-
-        label {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 700;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--card-border);
-            border-radius: var(--radius-md);
-            padding: 12px;
-            color: var(--text-main);
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        input:focus, textarea:focus { border-color: var(--primary); }
-
-        .btn {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: var(--radius-md);
-            font-weight: 700;
-            font-size: 0.95rem;
-            cursor: pointer;
+        .controls-top {
             display: flex;
+            gap: 10px;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: transform 0.1s;
-        }
-
-        .btn:active { transform: scale(0.98); }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-            color: white;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-        }
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-main);
-        }
-
-        .vocab-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: var(--radius-md);
-            padding: 14px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .vocab-word {
-            font-size: 1.05rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 6px;
             flex-wrap: wrap;
         }
 
-        .vocab-trans { color: var(--text-muted); font-size: 0.88rem; margin-top: 2px; }
+        select, input, button {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+        }
 
-        .badge {
-            background: rgba(99, 102, 241, 0.2);
-            color: #a5b4fc;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.7rem;
+        button {
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            border: none;
             font-weight: 600;
+            transition: background 0.2s;
         }
 
-        .box-badge {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 700;
+        button:hover {
+            background: var(--primary-hover);
         }
 
-        .audio-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 4px; }
+        button.secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
 
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            z-index: 2000;
+        button.secondary:hover {
+            background: var(--border);
+        }
+
+        /* Nav Tabs */
+        .tabs {
             display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
         }
 
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-
-        .modal-card {
-            background: #1e293b;
-            border-top: 1px solid var(--card-border);
-            border-radius: 24px 24px 0 0;
-            padding: 24px 20px calc(20px + var(--safe-area-bottom));
-            width: 100%;
-            max-width: var(--container-width);
-            max-height: 85vh;
-            overflow-y: auto;
-            transform: translateY(100%);
-            transition: transform 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+        .tab-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 10px 16px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            white-space: nowrap;
         }
 
-        .modal-overlay.active .modal-card { transform: translateY(0); }
+        .tab-btn.active {
+            background: var(--card-bg);
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Layout Grid */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* Forms */
+        .form-group {
             margin-bottom: 15px;
         }
 
-        .tense-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 15px; }
-
-        .tense-tab {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
             color: var(--text-muted);
-            padding: 8px 12px;
-            border-radius: var(--radius-md);
-            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+        }
+
+        .conjugation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.02);
+            padding: 12px;
+            border-radius: var(--radius);
+            border: 1px dashed var(--border);
+        }
+
+        .conjugation-col {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .conjugation-col h4 {
+            font-size: 0.85rem;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+        }
+
+        .conjugation-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pronoun-label {
+            font-size: 0.85rem;
             font-weight: 600;
-            white-space: nowrap;
+            color: var(--text-muted);
+            min-width: 65px;
+            text-align: right;
+        }
+
+        .conjugation-row input {
+            flex: 1;
+        }
+
+        /* World Map */
+        #map-container {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            background: #101827;
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .country {
+            fill: #374151;
+            stroke: #1f2937;
+            stroke-width: 0.5px;
+            transition: fill 0.2s;
             cursor: pointer;
         }
 
-        .tense-tab.active { background: var(--primary); color: white; }
+        .country:hover {
+            fill: #4b5563;
+        }
 
-        .conj-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-        .conj-table td { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.95rem; }
-        .conj-table td:first-child { color: var(--text-muted); width: 40%; font-size: 0.85rem; }
+        .country.active {
+            fill: var(--primary);
+        }
 
-        .quiz-card {
-            min-height: 270px;
+        /* Quiz Flashcard */
+        .flashcard {
+            min-height: 200px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            position: relative;
-        }
-
-        .quiz-prompt { font-size: 1.7rem; font-weight: 800; margin: 15px 0 5px; }
-
-        .box-bar-container {
-            display: flex;
-            gap: 6px;
-            height: 12px;
-            margin-top: 10px;
-            border-radius: 6px;
-            overflow: hidden;
-            background: rgba(0,0,0,0.3);
-        }
-
-        .box-bar-segment { height: 100%; transition: width 0.3s ease; }
-
-        nav.bottom-nav {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid var(--card-border);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0 calc(10px + var(--safe-area-bottom));
-            z-index: 1000;
-        }
-
-        .nav-item {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 3px;
-            font-size: 0.7rem;
+            font-size: 1.5rem;
+            font-weight: bold;
             cursor: pointer;
-            width: 20%;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            position: relative;
+            padding: 20px;
         }
 
-        .nav-item.active { color: var(--primary); font-weight: 700; }
-        .nav-icon { font-size: 1.2rem; }
+        .flashcard .subtext {
+            font-size: 0.9rem;
+            font-weight: normal;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* Utilities */
         .hidden { display: none !important; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .flex { display: flex; }
+        .gap-10 { gap: 10px; }
+        .mt-10 { margin-top: 10px; }
+        .badge {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+        }
+        
+        .info-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(79, 70, 229, 0.08);
+            border-left: 3px solid var(--primary);
+            padding: 8px 10px;
+            border-radius: 0 6px 6px 0;
+            margin-top: 6px;
+        }
+
+        .alert-box {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--danger);
+            color: var(--danger);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        th {
+            color: var(--text-muted);
+        }
     </style>
 </head>
-<body class="device-phone">
+<body>
 
+<div class="app-wrapper" id="appWrapper">
     <header>
-        <div class="brand">LingoVault ⚡</div>
-        <div class="header-controls">
-            <button class="device-btn" id="deviceToggleBtn" onclick="toggleDeviceLayout()">📱 iPhone 17 Pro</button>
-            <select id="userSelect" class="select-btn" onchange="switchUser()">
-                <option value="Holger">👤 Holger</option>
-                <option value="Sanni">👤 Sanni</option>
+        <div class="logo">
+            🌐 LingoVault <span class="badge">PRO</span>
+        </div>
+
+        <div class="controls-top">
+            <!-- User Switcher -->
+            <select id="userSelect" onchange="switchUser(this.value)">
+                <option value="Holger">Holger</option>
+                <option value="Sanni">Sanni</option>
             </select>
-            <select id="languageSelect" class="select-btn" onchange="switchLanguage()"></select>
+
+            <!-- Language Switcher -->
+            <select id="langSelect" onchange="switchLanguage(this.value)">
+                <option value="es">Spanisch</option>
+                <option value="en">Englisch</option>
+                <option value="fr">Französisch</option>
+                <option value="it">Italienisch</option>
+                <option value="pt">Portugiesisch</option>
+            </select>
+
+            <!-- Viewport Switcher -->
+            <select id="viewportSelect" onchange="switchViewport(this.value)">
+                <option value="desktop">🖥️ Desktop</option>
+                <option value="tablet">📱 Tablet</option>
+                <option value="mobile">📱 Mobile</option>
+            </select>
+
+            <!-- Theme Toggle -->
+            <button class="secondary" onclick="toggleTheme()">🌓</button>
         </div>
     </header>
 
-    <main>
-        <!-- VIEW 1: VOCABULARY LIST -->
-        <section id="view-list" class="views-container active">
-            <div class="hero-banner">
-                <div class="hero-header-actions">
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">AMTSSPRACHEN-VERBREITUNG</span>
-                    <button class="map-toggle-btn" id="mapToggleBtn" onclick="toggleWorldMap()">🗺️ Karte aus</button>
-                </div>
-                
-                <div class="world-map-container" id="worldMapContainer">
-                    <svg id="worldMapSvg"></svg>
-                </div>
-                
-                <div class="hero-info">
-                    <div id="heroFlag" class="lang-flag">🌐</div>
-                    <div id="heroLangTitle" class="lang-title">Sprache wählen</div>
-                </div>
-
-                <div class="search-box-row">
-                    <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen..." oninput="renderVocabList()">
-                    <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 18px;">+</button>
-                </div>
-            </div>
-
-            <div id="vocabList"></div>
-        </section>
-
-        <!-- VIEW 2: ADD / EDIT VOCABULARY -->
-        <section id="view-add" class="views-container">
-            <div class="glass-card">
-                <h2 style="margin-bottom: 15px;" id="formTitle">Vokabel eintragen</h2>
-                <form id="vocabForm" onsubmit="saveVocab(event)">
-                    <input type="hidden" id="editVocabId">
-                    
-                    <div class="form-group">
-                        <label>Wort / Phrase / Verb (Infinitiv)</label>
-                        <input type="text" id="inputWord" placeholder="z. B. hablar / to speak" required oninput="autoGenerateConjugations()">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Übersetzung</label>
-                        <input type="text" id="inputTranslation" placeholder="z. B. sprechen" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Wortart</label>
-                        <select id="inputType" onchange="toggleVerbFields()">
-                            <option value="substantiv">Substantiv / Sonstige</option>
-                            <option value="verb">Verb (mit Konjugationstabelle)</option>
-                        </select>
-                    </div>
-
-                    <div id="conjSection" class="hidden">
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label>Konjugations-Modus</label>
-                            <select id="conjFillMode" onchange="autoGenerateConjugations()">
-                                <option value="auto">⚡ Automatisch ausfüllen (Auto-Fill)</option>
-                                <option value="manual">✍️ Selbst ausfüllen (Manuell)</option>
-                            </select>
-                        </div>
-
-                        <label style="color: #a5b4fc; margin-top: 10px;">Konjugation Präsens (Gegenwart)</label>
-                        <div class="grid-2">
-                            <input type="text" id="c_pres_1" placeholder="1. Sg (yo / I)">
-                            <input type="text" id="c_pres_2" placeholder="2. Sg (tú / you)">
-                            <input type="text" id="c_pres_3" placeholder="3. Sg (él / he)">
-                            <input type="text" id="c_pres_4" placeholder="1. Pl (nosotros / we)">
-                            <input type="text" id="c_pres_5" placeholder="2. Pl (vosotros / you)">
-                            <input type="text" id="c_pres_6" placeholder="3. Pl (ellos / they)">
-                        </div>
-
-                        <label style="color: #a5b4fc; margin-top: 10px;">Präteritum (Vergangenheit)</label>
-                        <div class="grid-2">
-                            <input type="text" id="c_past_1" placeholder="1. Sg">
-                            <input type="text" id="c_past_3" placeholder="3. Sg">
-                        </div>
-
-                        <label style="color: #a5b4fc; margin-top: 10px;">Perfekt (Partizip)</label>
-                        <input type="text" id="c_perf" placeholder="z. B. hablado / spoken">
-                    </div>
-
-                    <div class="form-group" style="margin-top: 12px;">
-                        <label>Beispielsatz (Optional)</label>
-                        <textarea id="inputExample" rows="2" placeholder="z. B. Yo hablo español con mis amigos."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Grammatikregel / Notizen</label>
-                        <input type="text" id="inputGrammar" placeholder="z. B. Regelmäßiges Verb auf -ar">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Vokabel Speichern</button>
-                </form>
-            </div>
-        </section>
-
-        <!-- VIEW 3: QUIZ / TRAINER -->
-        <section id="view-quiz" class="views-container">
-            <div class="glass-card" style="padding: 12px; margin-bottom: 12px;">
-                <div class="grid-2">
-                    <div>
-                        <label>Abfrage-Richtung</label>
-                        <select id="quizDirection" onchange="startQuiz()">
-                            <option value="foreign_de">Fremdsprache ➔ Deutsch</option>
-                            <option value="de_foreign">Deutsch ➔ Fremdsprache</option>
-                            <option value="verb_conj">Verben: Konjugations-Quiz</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Filter</label>
-                        <select id="quizFilter" onchange="startQuiz()">
-                            <option value="due">⏰ Nur Heute Fällige</option>
-                            <option value="all">📚 Alle Vokabeln</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass-card quiz-card" id="quizCard">
-                <div style="display: flex; gap: 8px; position: absolute; top: 15px; left: 15px;">
-                    <div id="quizBadge" class="badge">Box 1</div>
-                    <div id="quizDueBadge" class="box-badge">Fällig</div>
-                </div>
-                
-                <div id="quizPrompt" class="quiz-prompt">---</div>
-                <div id="quizSubprompt" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">---</div>
-                
-                <button id="hintBtn" class="btn btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem; margin-bottom: 10px;" onclick="toggleHint()">💡 Beispielsatz anzeigen</button>
-                <div id="quizHint" style="font-style: italic; color: #a5b4fc; font-size: 0.85rem; margin-bottom: 15px;" class="hidden"></div>
-
-                <div style="width: 100%; display: flex; gap: 8px;">
-                    <input type="text" id="quizInput" placeholder="Deine Antwort..." autocomplete="off" onkeydown="if(event.key==='Enter') checkAnswer()">
-                    <button class="btn btn-secondary" style="width: auto; padding: 0 15px;" id="quizAudioBtn" onclick="speakQuizWord()">🔊</button>
-                </div>
-                <button class="btn btn-primary" style="margin-top: 12px;" id="quizCheckBtn" onclick="checkAnswer()">Prüfen</button>
-            </div>
-
-            <div id="quizFeedback" class="glass-card hidden" style="text-align: center;">
-                <h3 id="feedbackResult"></h3>
-                <p id="feedbackDetail" style="margin-top: 5px; color: var(--text-muted);"></p>
-                <div id="feedbackActions" style="display: flex; gap: 10px; margin-top: 15px;"></div>
-            </div>
-        </section>
-
-        <!-- VIEW 4: STATS & DASHBOARD -->
-        <section id="view-stats" class="views-container">
-            <div class="glass-card">
-                <h2 style="margin-bottom: 15px;">Lern-Statistik</h2>
-                
-                <div class="grid-2" style="margin-bottom: 15px;">
-                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
-                        <div style="font-size: 1.6rem; font-weight: 800; color: #a5b4fc;" id="statTotal">0</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Gesamte Vokabeln</div>
-                    </div>
-                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
-                        <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-gold);" id="statStreak">0 🔥</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Tages-Streak</div>
-                    </div>
-                </div>
-
-                <div class="grid-2" style="margin-bottom: 15px;">
-                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
-                        <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-green);" id="statDue">0</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Heute Fällig</div>
-                    </div>
-                    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); text-align: center;">
-                        <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8;" id="statAccuracy">0%</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">Erfolgsquote</div>
-                    </div>
-                </div>
-
-                <label>Verteilung auf Fächer (Box 1 - 5)</label>
-                <div class="box-bar-container" id="boxBarContainer"></div>
-                <div id="boxLegend" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 6px;"></div>
-            </div>
-        </section>
-
-        <!-- VIEW 5: SETTINGS / BACKUP / CSV -->
-        <section id="view-settings" class="views-container">
-            <div class="glass-card">
-                <h2 style="margin-bottom: 15px;">Einstellungen & Import</h2>
-                
-                <div class="form-group">
-                    <label>Neue Sprache für <span id="settingsUser">Nutzer</span> hinzufügen</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="newLangInput" placeholder="z. B. Italienisch">
-                        <button class="btn btn-primary" style="width: auto;" onclick="addLanguage()">+</button>
-                    </div>
-                </div>
-
-                <hr style="border-color: var(--card-border); margin: 20px 0;">
-
-                <h3 style="margin-bottom: 10px; font-size: 0.95rem;">Daten-Sicherung (JSON)</h3>
-                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn btn-secondary" onclick="exportData()">💾 Vollständiges Backup Exportieren</button>
-                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📂 Backup Importieren</button>
-                    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
-                </div>
-
-                <h3 style="margin-bottom: 10px; font-size: 0.95rem;">CSV-Import (Massen-Import)</h3>
-                <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 10px;">
-                    Format: <code>Wort;Übersetzung;Wortart</code>
-                </p>
-                <textarea id="csvImportText" rows="3" placeholder="hablar;sprechen;verb&#10;casa;Haus;substantiv"></textarea>
-                <button class="btn btn-primary" style="margin-top: 8px;" onclick="importCSV()">📥 CSV Importieren</button>
-            </div>
-        </section>
-    </main>
-
-    <!-- CONJUGATION INSPECTOR MODAL -->
-    <div id="conjModal" class="modal-overlay" onclick="closeModalOnOuterClick(event)">
-        <div class="modal-card">
-            <div class="modal-header">
-                <div>
-                    <h2 id="modalVerbTitle" style="font-size: 1.4rem;">Verb</h2>
-                    <div id="modalVerbTrans" style="color: var(--text-muted); font-size: 0.9rem;">Übersetzung</div>
-                </div>
-                <button onclick="closeConjModal()" style="background:none; border:none; color: var(--text-main); font-size: 1.5rem; cursor:pointer;">✕</button>
-            </div>
-
-            <div class="tense-tabs">
-                <button class="tense-tab active" onclick="switchTense('pres', this)">Präsens</button>
-                <button class="tense-tab" onclick="switchTense('past', this)">Präteritum</button>
-                <button class="tense-tab" onclick="switchTense('perf', this)">Perfekt</button>
-            </div>
-
-            <table class="conj-table" id="modalConjTable"></table>
-        </div>
+    <!-- Navigation -->
+    <div class="tabs">
+        <button id="btn-tab-map" class="tab-btn active" onclick="switchTab('map', event)">🗺️ Karte & Setup</button>
+        <button id="btn-tab-list" class="tab-btn" onclick="switchTab('list', event)">📚 Vokabeln & Editor</button>
+        <button id="btn-tab-quiz" class="tab-btn" onclick="switchTab('quiz', event)">🧠 Leitner Trainer</button>
+        <button id="btn-tab-data" class="tab-btn" onclick="switchTab('data', event)">⚙️ Daten & Backup</button>
     </div>
 
-    <!-- Navigation unten -->
-    <nav class="bottom-nav">
-        <button class="nav-item active" onclick="switchTab('list', this)">
-            <span class="nav-icon">📚</span>
-            <span>Vokabeln</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('add', this)">
-            <span class="nav-icon">➕</span>
-            <span>Neu</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('quiz', this)">
-            <span class="nav-icon">🎯</span>
-            <span>Abfrage</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('stats', this)">
-            <span class="nav-icon">📊</span>
-            <span>Stats</span>
-        </button>
-        <button class="nav-item" onclick="switchTab('settings', this)">
-            <span class="nav-icon">⚙️</span>
-            <span>Daten</span>
-        </button>
-    </nav>
+    <!-- MAIN CONTENT AREAS -->
+    <div class="main-content">
 
-    <script>
-        const BOX_INTERVALS = [0, 1, 3, 7, 14, 30];
+        <!-- TAB 1: MAP & QUICK SETUP -->
+        <div id="tab-map" class="tab-content">
+            <div class="card">
+                <h3>Sprachregionen & Herkunft</h3>
+                <p style="color: var(--text-muted); font-size:0.85rem; margin-bottom: 15px;">
+                    Klicke auf ein Land, um Dialekte oder Regionen einzuschränken.
+                </p>
+                <div id="map-container"></div>
+            </div>
+        </div>
 
-        const FLAG_MAP = {
-            'Spanisch': '🇪🇸',
-            'Englisch': '🇬🇧',
-            'Französisch': '🇫🇷',
-            'Italienisch': '🇮🇹',
-            'Portugiesisch': '🇵🇹',
-            'Deutsch': '🇩🇪',
-            'Russisch': '🇷🇺',
-            'Japanisch': '🇯🇵',
-            'Chinesisch': '🇨🇳'
-        };
-
-        const LANG_ISO_CODES = {
-            'Spanisch': ["724", "484", "170", "032", "152", "604", "862", "218", "242", "320", "340", "558", "591", "600", "858", "068", "192", "214"],
-            'Englisch': ["840", "826", "124", "036", "554", "372", "710"],
-            'Französisch': ["250", "124", "056", "756", "384", "804"],
-            'Italienisch': ["380", "756"],
-            'Portugiesisch': ["076", "620", "024"],
-            'Deutsch': ["276", "040", "756"],
-            'Russisch': ["643", "112", "398"],
-            'Japanisch': ["392"],
-            'Chinesisch': ["156", "158"]
-        };
-
-        let mapVisible = true;
-        let isTabletMode = false;
-        let worldDataGeoJSON = null;
-
-        let appData = JSON.parse(localStorage.getItem('lingoVaultProData')) || {
-            currentUser: 'Holger',
-            userLangs: { 'Holger': 'Spanisch', 'Sanni': 'Englisch' },
-            languages: { 'Holger': ['Spanisch'], 'Sanni': ['Englisch'] },
-            stats: { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 },
-            vocabularies: []
-        };
-
-        if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 };
-        if (!appData.languages) appData.languages = { 'Holger': ['Spanisch'], 'Sanni': ['Englisch'] };
-        if (!appData.languages['Holger']) appData.languages['Holger'] = ['Spanisch'];
-        if (!appData.languages['Sanni']) appData.languages['Sanni'] = ['Englisch'];
-
-        let currentActiveVerb = null;
-        let currentQuizItem = null;
-        let currentQuizTargetAnswer = "";
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initUserAndLang();
-            renderVocabList();
-            initRealWorldMap();
-
-            const ro = new ResizeObserver(() => {
-                if (mapVisible && worldDataGeoJSON) {
-                    initRealWorldMap();
-                }
-            });
-            ro.observe(document.getElementById("worldMapContainer"));
-        });
-
-        function saveToLocalStorage() {
-            localStorage.setItem('lingoVaultProData', JSON.stringify(appData));
-        }
-
-        function updateStreak() {
-            if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0, lastActiveDate: null, streakDays: 0 };
-            
-            const today = new Date().toISOString().slice(0, 10);
-            const last = appData.stats.lastActiveDate;
-
-            if (!last) {
-                appData.stats.streakDays = 1;
-                appData.stats.lastActiveDate = today;
-            } else if (last !== today) {
-                const prev = new Date();
-                prev.setDate(prev.getDate() - 1);
-                const yesterday = prev.toISOString().slice(0, 10);
-
-                if (last === yesterday) {
-                    appData.stats.streakDays = (appData.stats.streakDays || 0) + 1;
-                } else {
-                    appData.stats.streakDays = 1;
-                }
-                appData.stats.lastActiveDate = today;
-            }
-        }
-
-        function initRealWorldMap() {
-            const container = document.getElementById("worldMapContainer");
-            const width = Math.max(container.clientWidth || 400, 300);
-            const height = Math.max(container.clientHeight || 220, 180);
-
-            const svg = d3.select("#worldMapSvg");
-            svg.selectAll("*").remove();
-            svg.attr("viewBox", `0 0 ${width} ${height}`);
-
-            const projection = d3.geoMercator()
-                .scale(width / 6.3)
-                .translate([width / 2, height / 1.4]);
-
-            const path = d3.geoPath().projection(projection);
-
-            if (worldDataGeoJSON) {
-                renderMapFeatures(svg, path);
-            } else {
-                d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(data => {
-                    worldDataGeoJSON = topojson.feature(data, data.objects.countries).features;
-                    renderMapFeatures(svg, path);
-                }).catch(err => {
-                    console.error("Fehler beim Laden der Karte:", err);
-                });
-            }
-        }
-
-        function renderMapFeatures(svg, path) {
-            svg.selectAll("path")
-                .data(worldDataGeoJSON)
-                .enter()
-                .append("path")
-                .attr("class", "country-shape")
-                .attr("id", d => `country-${String(d.id || '').padStart(3, '0')}`)
-                .attr("d", path);
-
-            updateMapHighlights();
-        }
-
-        function updateMapHighlights() {
-            if (!worldDataGeoJSON) return;
-
-            const currentLang = appData.userLangs[appData.currentUser] || 'Spanisch';
-            const activeIsoCodes = LANG_ISO_CODES[currentLang] || [];
-
-            d3.selectAll(".country-shape")
-                .classed("active-country", d => {
-                    if (!d || !d.id) return false;
-                    const isoCode = String(d.id).padStart(3, '0');
-                    return activeIsoCodes.includes(isoCode);
-                });
-        }
-
-        function toggleDeviceLayout() {
-            isTabletMode = !isTabletMode;
-            const btn = document.getElementById('deviceToggleBtn');
-            if (isTabletMode) {
-                document.body.className = 'device-tablet';
-                btn.textContent = '📱 Tab A11+';
-            } else {
-                document.body.className = 'device-phone';
-                btn.textContent = '📱 iPhone 17 Pro';
-            }
-            setTimeout(initRealWorldMap, 300);
-        }
-
-        function toggleWorldMap() {
-            mapVisible = !mapVisible;
-            const container = document.getElementById('worldMapContainer');
-            const btn = document.getElementById('mapToggleBtn');
-
-            if (mapVisible) {
-                container.classList.remove('hidden-map');
-                btn.textContent = '🗺️ Karte aus';
-                setTimeout(initRealWorldMap, 100);
-            } else {
-                container.classList.add('hidden-map');
-                btn.textContent = '🗺️ Karte ein';
-            }
-        }
-
-        function initUserAndLang() {
-            document.getElementById('userSelect').value = appData.currentUser;
-            renderLanguageDropdown();
-            document.getElementById('settingsUser').textContent = appData.currentUser;
-            updateHeroBanner();
-        }
-
-        function switchUser() {
-            appData.currentUser = document.getElementById('userSelect').value;
-            renderLanguageDropdown();
-            document.getElementById('settingsUser').textContent = appData.currentUser;
-            saveToLocalStorage();
-            renderVocabList();
-            updateHeroBanner();
-        }
-
-        function renderLanguageDropdown() {
-            const select = document.getElementById('languageSelect');
-            select.innerHTML = '';
-            const userLangs = appData.languages[appData.currentUser] || ['Spanisch'];
-            
-            userLangs.forEach(lang => {
-                const opt = document.createElement('option');
-                opt.value = lang;
-                opt.textContent = lang;
-                if (lang === appData.userLangs[appData.currentUser]) opt.selected = true;
-                select.appendChild(opt);
-            });
-        }
-
-        function switchLanguage() {
-            const selectedLang = document.getElementById('languageSelect').value;
-            appData.userLangs[appData.currentUser] = selectedLang;
-            saveToLocalStorage();
-            updateHeroBanner();
-            renderVocabList();
-        }
-
-        function updateHeroBanner() {
-            const currentLang = appData.userLangs[appData.currentUser] || 'Sprache';
-            const flag = FLAG_MAP[currentLang] || '🌐';
-            document.getElementById('heroFlag').textContent = flag;
-            document.getElementById('heroLangTitle').textContent = currentLang;
-
-            updateMapHighlights();
-        }
-
-        function addLanguage() {
-            const input = document.getElementById('newLangInput');
-            const val = input.value.trim();
-            if (val) {
-                if (!appData.languages[appData.currentUser]) appData.languages[appData.currentUser] = [];
-                if (!appData.languages[appData.currentUser].includes(val)) {
-                    appData.languages[appData.currentUser].push(val);
-                    appData.userLangs[appData.currentUser] = val;
-                    saveToLocalStorage();
-                    renderLanguageDropdown();
-                    updateHeroBanner();
-                    renderVocabList();
-                }
-                input.value = '';
-            }
-        }
-
-        function switchTab(viewId, navBtn) {
-            document.querySelectorAll('.views-container').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById(`view-${viewId}`).classList.add('active');
-            if (navBtn) navBtn.classList.add('active');
-
-            if (viewId === 'quiz') startQuiz();
-            if (viewId === 'list') renderVocabList();
-            if (viewId === 'stats') renderStats();
-        }
-
-        function toggleVerbFields() {
-            const type = document.getElementById('inputType').value;
-            document.getElementById('conjSection').className = type === 'verb' ? '' : 'hidden';
-            if (type === 'verb') autoGenerateConjugations();
-        }
-
-        function autoGenerateConjugations() {
-            const fillMode = document.getElementById('conjFillMode').value;
-            const type = document.getElementById('inputType').value;
-            const verb = document.getElementById('inputWord').value.trim().toLowerCase();
-            const currentLang = appData.userLangs[appData.currentUser];
-
-            if (type !== 'verb' || fillMode !== 'auto' || !verb) return;
-
-            if (currentLang === 'Spanisch') {
-                let stem = verb.slice(0, -2);
-                let ending = verb.slice(-2);
-
-                if (ending === 'ar') {
-                    document.getElementById('c_pres_1').value = stem + 'o';
-                    document.getElementById('c_pres_2').value = stem + 'as';
-                    document.getElementById('c_pres_3').value = stem + 'a';
-                    document.getElementById('c_pres_4').value = stem + 'amos';
-                    document.getElementById('c_pres_5').value = stem + 'áis';
-                    document.getElementById('c_pres_6').value = stem + 'an';
-                    document.getElementById('c_past_1').value = stem + 'é';
-                    document.getElementById('c_past_3').value = stem + 'ó';
-                    document.getElementById('c_perf').value = stem + 'ado';
-                } else if (ending === 'er' || ending === 'ir') {
-                    const pres5 = ending === 'er' ? stem + 'éis' : stem + 'ís';
-                    document.getElementById('c_pres_1').value = stem + 'o';
-                    document.getElementById('c_pres_2').value = stem + 'es';
-                    document.getElementById('c_pres_3').value = stem + 'e';
-                    document.getElementById('c_pres_4').value = stem + (ending === 'er' ? 'emos' : 'imos');
-                    document.getElementById('c_pres_5').value = pres5;
-                    document.getElementById('c_pres_6').value = stem + 'en';
-                    document.getElementById('c_past_1').value = stem + 'í';
-                    document.getElementById('c_past_3').value = stem + 'ió';
-                    document.getElementById('c_perf').value = stem + 'ido';
-                }
-            } else if (currentLang === 'Englisch') {
-                let cleanVerb = verb.replace(/^to\s+/, '');
-                document.getElementById('c_pres_1').value = cleanVerb;
-                document.getElementById('c_pres_2').value = cleanVerb;
-                document.getElementById('c_pres_3').value = cleanVerb.endsWith('s') || cleanVerb.endsWith('ch') ? cleanVerb + 'es' : cleanVerb + 's';
-                document.getElementById('c_pres_4').value = cleanVerb;
-                document.getElementById('c_pres_5').value = cleanVerb;
-                document.getElementById('c_pres_6').value = cleanVerb;
-                document.getElementById('c_past_1').value = cleanVerb + 'ed';
-                document.getElementById('c_past_3').value = cleanVerb + 'ed';
-                document.getElementById('c_perf').value = cleanVerb + 'ed';
-            }
-        }
-
-        function openAddModal() {
-            document.getElementById('vocabForm').reset();
-            document.getElementById('editVocabId').value = '';
-            document.getElementById('formTitle').textContent = 'Vokabel eintragen';
-            toggleVerbFields();
-            switchTab('add', document.querySelectorAll('.nav-item')[1]);
-        }
-
-        function saveVocab(e) {
-            e.preventDefault();
-            const editId = document.getElementById('editVocabId').value;
-            const currentLang = appData.userLangs[appData.currentUser];
-            const type = document.getElementById('inputType').value;
-
-            const entryData = {
-                id: editId ? Number(editId) : Date.now(),
-                user: appData.currentUser,
-                lang: currentLang,
-                word: document.getElementById('inputWord').value.trim(),
-                translation: document.getElementById('inputTranslation').value.trim(),
-                type: type,
-                example: document.getElementById('inputExample').value.trim(),
-                grammar: document.getElementById('inputGrammar').value.trim(),
-                box: editId ? (appData.vocabularies.find(v => v.id == editId)?.box || 1) : 1,
-                nextReview: Date.now(),
-                conjugations: type === 'verb' ? {
-                    pres: [
-                        document.getElementById('c_pres_1').value.trim(),
-                        document.getElementById('c_pres_2').value.trim(),
-                        document.getElementById('c_pres_3').value.trim(),
-                        document.getElementById('c_pres_4').value.trim(),
-                        document.getElementById('c_pres_5').value.trim(),
-                        document.getElementById('c_pres_6').value.trim()
-                    ],
-                    past: [
-                        document.getElementById('c_past_1').value.trim(),
-                        document.getElementById('c_past_3').value.trim()
-                    ],
-                    perf: document.getElementById('c_perf').value.trim()
-                } : null
-            };
-
-            if (editId) {
-                const index = appData.vocabularies.findIndex(v => v.id == editId);
-                if (index !== -1) appData.vocabularies[index] = entryData;
-            } else {
-                appData.vocabularies.push(entryData);
-            }
-
-            saveToLocalStorage();
-            document.getElementById('vocabForm').reset();
-            switchTab('list', document.querySelectorAll('.nav-item')[0]);
-        }
-
-        function editVocab(id) {
-            const item = appData.vocabularies.find(v => v.id === id);
-            if (!item) return;
-
-            document.getElementById('editVocabId').value = item.id;
-            document.getElementById('formTitle').textContent = 'Vokabel bearbeiten';
-            document.getElementById('inputWord').value = item.word;
-            document.getElementById('inputTranslation').value = item.translation;
-            document.getElementById('inputType').value = item.type;
-            document.getElementById('inputExample').value = item.example || '';
-            document.getElementById('inputGrammar').value = item.grammar || '';
-
-            toggleVerbFields();
-
-            if (item.type === 'verb' && item.conjugations) {
-                document.getElementById('conjFillMode').value = 'manual';
-                if (item.conjugations.pres) {
-                    item.conjugations.pres.forEach((val, i) => {
-                        const el = document.getElementById(`c_pres_${i+1}`);
-                        if (el) el.value = val || '';
-                    });
-                }
-                if (item.conjugations.past) {
-                    document.getElementById('c_past_1').value = item.conjugations.past[0] || '';
-                    document.getElementById('c_past_3').value = item.conjugations.past[1] || '';
-                }
-                document.getElementById('c_perf').value = item.conjugations.perf || '';
-            }
-
-            switchTab('add', document.querySelectorAll('.nav-item')[1]);
-        }
-
-        function renderVocabList() {
-            const container = document.getElementById('vocabList');
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const currentLang = appData.userLangs[appData.currentUser];
-            container.innerHTML = '';
-
-            const filtered = appData.vocabularies.filter(v => 
-                v.user === appData.currentUser && 
-                v.lang === currentLang && 
-                (v.word.toLowerCase().includes(search) || v.translation.toLowerCase().includes(search))
-            );
-
-            if (filtered.length === 0) {
-                container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding: 40px 0;">Keine Vokabeln vorhanden.</div>`;
-                return;
-            }
-
-            filtered.forEach(item => {
-                const isDue = !item.nextReview || item.nextReview <= Date.now();
-                const div = document.createElement('div');
-                div.className = 'vocab-item';
-                div.innerHTML = `
-                    <div style="flex: 1;">
-                        <div class="vocab-word">
-                            <span>${item.word}</span>
-                            <span class="badge">${item.type}</span>
-                            <span class="box-badge">Box ${item.box || 1}</span>
-                            ${isDue ? `<span style="color:var(--accent-gold); font-size:0.75rem;">⏰ Fällig</span>` : ''}
-                            <button class="audio-btn" onclick="speakText('${item.word}')">🔊</button>
+        <!-- TAB 2: VOCAB LIST & EDITOR -->
+        <div id="tab-list" class="tab-content hidden">
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 id="editorTitle">Neue Vokabel hinzufügen</h3>
+                <form id="vocabForm" onsubmit="handleFormSubmit(event)" class="mt-10">
+                    <input type="hidden" id="vocabId">
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        <div class="form-group">
+                            <label>Zielwort / Verb</label>
+                            <input type="text" id="targetWord" required placeholder="z.B. hablar">
                         </div>
-                        <div class="vocab-trans">${item.translation}</div>
-                        ${item.example ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">💬 "${item.example}"</div>` : ''}
+                        <div class="form-group">
+                            <label>Übersetzung (Deutsch)</label>
+                            <input type="text" id="translation" required placeholder="z.B. sprechen">
+                        </div>
+                        <div class="form-group">
+                            <label>Wortart</label>
+                            <select id="wordType" onchange="toggleVerbFields()">
+                                <option value="noun">Substantiv / Sonstiges</option>
+                                <option value="verb">Verb</option>
+                            </select>
+                        </div>
                     </div>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        ${item.type === 'verb' ? `<button class="btn btn-secondary" style="padding:6px 10px; width:auto; font-size:0.8rem;" onclick="openConjModal(${item.id})">🔍</button>` : ''}
-                        <button class="btn btn-secondary" style="padding:6px 10px; width:auto; font-size:0.8rem;" onclick="editVocab(${item.id})">✏️</button>
-                        <button onclick="deleteVocab(${item.id})" style="background:none; border:none; color: var(--accent-red); font-size:1.1rem; cursor:pointer; padding: 4px;">🗑️</button>
+
+                    <!-- Verb / Conjugation Fields -->
+                    <div id="verbFields" class="hidden">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                            <label style="font-size: 0.85rem; color: var(--text-muted); font-weight:600;">Konjugationsformen</label>
+                            <button type="button" class="secondary" style="font-size: 0.75rem;" onclick="autoFillConjugation()">🪄 Auto-Fill Muster</button>
+                        </div>
+
+                        <div class="info-note">
+                            💡 <strong>Hinweis zur automatischen Konjugation:</strong> Der Auto-Fill basiert auf regulären Verb-Endungen der gewählten Sprache. Unregelmäßige Verben müssen von Hand angepasst werden.
+                        </div>
+
+                        <!-- Zweispaltige Konjugation (Singular / Plural) mit automatischen Pronomen -->
+                        <div class="conjugation-grid">
+                            <!-- Singular Spalte -->
+                            <div class="conjugation-col">
+                                <h4>SINGULAR</h4>
+                                <div class="conjugation-row">
+                                    <span class="pronoun-label" id="p-s1">Yo</span>
+                                    <input type="text" id="conj_s1" placeholder="1. Pers. Sing.">
+                                </div>
+                                <div class="conjugation-row">
+                                    <span class="pronoun-label" id="p-s2">Tú</span>
+                                    <input type="text" id="conj_s2" placeholder="2. Pers. Sing.">
+                                </div>
+                                <div class="conjugation-row">
+                                    <span class="pronoun-label" id="p-s3">Él/Ella</span>
+                                    <input type="text" id="conj_s3" placeholder="3. Pers. Sing.">
+                                </div>
+                            </div>
+
+                            <!-- Plural Spalte -->
+                            <div class="conjugation-col">
+                                <h4>PLURAL</h4>
+                                <div class="conjugation-row">
+                                    <span class="pronoun-label" id="p-p1">Nosotros</span>
+                                    <input type="text" id="conj_p1" placeholder="1. Pers. Plur.">
+                                </div>
+                                <div class="conjugation-row">
+                                    <span class="pronoun-label" id="p-p2">Vosotros</span>
+                                    <input type="text" id="conj_p2" placeholder="2. Pers. Plur.">
+                                </div>
+                                <div class="conjugation-row">
+                                    <span class="pronoun-label" id="p-p3">Ellos/Ellas</span>
+                                    <input type="text" id="conj_p3" placeholder="3. Pers. Plur.">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                `;
-                container.appendChild(div);
-            });
-        }
 
-        function deleteVocab(id) {
-            appData.vocabularies = appData.vocabularies.filter(v => v.id !== id);
-            saveToLocalStorage();
-            renderVocabList();
-        }
+                    <div class="flex gap-10 mt-10">
+                        <button type="submit" id="saveBtn">Speichern</button>
+                        <button type="button" class="secondary" onclick="resetForm()">Abbrechen</button>
+                    </div>
+                </form>
+            </div>
 
-        function openConjModal(id) {
-            currentActiveVerb = appData.vocabularies.find(v => v.id === id);
-            if (!currentActiveVerb) return;
+            <!-- List Table -->
+            <div class="card">
+                <h3>Vokabelkartei (<span id="vocabCount">0</span>)</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Wort</th>
+                                <th>Übersetzung</th>
+                                <th>Typ</th>
+                                <th>Box</th>
+                                <th>Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vocabTableBody">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-            document.getElementById('modalVerbTitle').textContent = currentActiveVerb.word;
-            document.getElementById('modalVerbTrans').textContent = currentActiveVerb.translation;
-            
-            switchTense('pres', document.querySelectorAll('.tense-tab')[0]);
-            document.getElementById('conjModal').classList.add('active');
-        }
+        <!-- TAB 3: LEITNER QUIZ -->
+        <div id="tab-quiz" class="tab-content hidden">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Leitner Abfrage</h3>
+                    <div id="quizStats" style="font-size: 0.85rem; color: var(--text-muted);">
+                        Fällig: <span id="dueCount" class="badge">0</span>
+                    </div>
+                </div>
 
-        function closeConjModal() {
-            document.getElementById('conjModal').classList.remove('active');
-        }
+                <div id="quizContainer">
+                    <div class="flashcard" id="flashcard" onclick="revealAnswer()">
+                        <div id="cardFront">Lade Vokabeln...</div>
+                        <div id="cardBack" class="hidden" style="color: var(--primary); margin-top: 15px;"></div>
+                        <div id="cardExtra" class="subtext hidden"></div>
+                    </div>
 
-        function closeModalOnOuterClick(e) {
-            if (e.target.id === 'conjModal') closeConjModal();
-        }
+                    <div id="resetNotice" class="alert-box hidden">
+                        ⚠️ <strong>Anfängermodus aktiviert:</strong> Diese Karte wurde falsch oder unverzüglich eingesehen und wird auf <strong>Box 1</strong> zurückgesetzt.
+                    </div>
 
-        function switchTense(tense, tabBtn) {
-            document.querySelectorAll('.tense-tab').forEach(b => b.classList.remove('active'));
-            if(tabBtn) tabBtn.classList.add('active');
+                    <div id="quizControls" class="flex gap-10 hidden" style="justify-content: center;">
+                        <button class="secondary" style="border-color: var(--danger); color: var(--danger);" onclick="processAnswer(false)">❌ Falsch / Nicht gewusst</button>
+                        <button style="background: var(--success);" onclick="processAnswer(true)">✅ Gewusst!</button>
+                        <button class="secondary" onclick="speakCurrentWord()">🔊 Vorlesen</button>
+                    </div>
+                    
+                    <div id="revealBtnContainer" class="flex" style="justify-content: center; margin-top: 10px;">
+                        <button class="secondary" onclick="revealAnswer()">👁️ Lösung anzeigen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            const table = document.getElementById('modalConjTable');
-            table.innerHTML = '';
+        <!-- TAB 4: DATA & BACKUP -->
+        <div id="tab-data" class="tab-content hidden">
+            <div class="card">
+                <h3>Daten-Management</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
+                    Exportiere deine Vokabeln als Backup oder importiere vorhandene CSV/JSON-Dateien.
+                </p>
 
-            const isSpanish = appData.userLangs[appData.currentUser] === 'Spanisch';
-            const persons = isSpanish ? 
-                ['yo', 'tú', 'él / ella / ud.', 'nosotros', 'vosotros', 'ellos / ellas'] : 
-                ['I', 'you', 'he / she / it', 'we', 'you (all)', 'they'];
+                <div class="flex gap-10 mt-10" style="flex-wrap: wrap;">
+                    <button onclick="exportJSON()">💾 Export JSON</button>
+                    <button onclick="exportCSV()">📄 Export CSV</button>
+                    <button class="secondary" onclick="document.getElementById('importFile').click()">📥 Importieren</button>
+                    <input type="file" id="importFile" class="hidden" accept=".json,.csv" onchange="handleImport(event)">
+                </div>
+            </div>
+        </div>
 
-            const conjs = currentActiveVerb ? currentActiveVerb.conjugations : null;
+    </div>
+</div>
 
-            if (tense === 'pres' && conjs && conjs.pres) {
-                conjs.pres.forEach((val, idx) => {
-                    if (val) addConjRow(table, persons[idx], val);
-                });
-            } else if (tense === 'past' && conjs && conjs.past) {
-                if (conjs.past[0]) addConjRow(table, persons[0] + ' / ' + persons[1], conjs.past[0]);
-                if (conjs.past[1]) addConjRow(table, persons[2], conjs.past[1]);
-            } else if (tense === 'perf' && conjs && conjs.perf) {
-                addConjRow(table, 'Partizip Perfekt', conjs.perf);
+<script>
+    // --- STATE MANAGEMENT ---
+    const PRONOUNS = {
+        es: { s1: 'Yo', s2: 'Tú', s3: 'Él/Ella', p1: 'Nosotros', p2: 'Vosotros', p3: 'Ellos/Ellas' },
+        en: { s1: 'I', s2: 'You', s3: 'He/She/It', p1: 'We', p2: 'You', p3: 'They' },
+        fr: { s1: 'Je', s2: 'Tu', s3: 'Il/Elle', p1: 'Nous', p2: 'Vous', p3: 'Ils/Elles' },
+        it: { s1: 'Io', s2: 'Tu', s3: 'Egli/Ella', p1: 'Noi', p2: 'Voi', p3: 'Essi/Esse' },
+        pt: { s1: 'Eu', s2: 'Tu', s3: 'Ele/Ela', p1: 'Nós', p2: 'Vós', p3: 'Eles/Elas' }
+    };
+
+    let appState = {
+        currentUser: 'Holger',
+        currentLang: 'es',
+        theme: 'light',
+        viewport: 'desktop',
+        vocabularies: []
+    };
+
+    const BOX_INTERVALS = [0, 1, 3, 7, 14, 30]; // Intervalle in Tagen
+    let processTimer = null;
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        initMap();
+        updatePronounLabels();
+        renderVocabTable();
+        initQuiz();
+
+        window.addEventListener('resize', () => {
+            initMap();
+        });
+    });
+
+    // --- STORAGE ---
+    function saveData() {
+        localStorage.setItem('lingoVaultProData', JSON.stringify(appState));
+    }
+
+    function loadData() {
+        const stored = localStorage.getItem('lingoVaultProData');
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                appState = { ...appState, ...parsed };
+            } catch (e) {
+                console.error("Fehler beim Laden der Daten:", e);
             }
+        }
+        
+        document.getElementById('userSelect').value = appState.currentUser;
+        document.getElementById('langSelect').value = appState.currentLang;
+        document.getElementById('viewportSelect').value = appState.viewport;
+        if (appState.theme === 'dark') document.body.classList.add('dark');
+        applyViewportClass(appState.viewport);
+    }
 
-            if (table.innerHTML === '') {
-                table.innerHTML = `<tr><td colspan="2" style="text-align:center; color:var(--text-muted);">Keine Formen eingetragen.</td></tr>`;
-            }
+    // --- HELPER: EINDEUTIGE ID ---
+    function generateUniqueId() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // --- UI SWITCHERS ---
+    function switchUser(user) {
+        appState.currentUser = user;
+        saveData();
+        renderVocabTable();
+        initQuiz();
+    }
+
+    function switchLanguage(lang) {
+        appState.currentLang = lang;
+        saveData();
+        updatePronounLabels();
+        renderVocabTable();
+        initQuiz();
+    }
+
+    function updatePronounLabels() {
+        const langPronouns = PRONOUNS[appState.currentLang] || PRONOUNS.es;
+        document.getElementById('p-s1').innerText = langPronouns.s1;
+        document.getElementById('p-s2').innerText = langPronouns.s2;
+        document.getElementById('p-s3').innerText = langPronouns.s3;
+        document.getElementById('p-p1').innerText = langPronouns.p1;
+        document.getElementById('p-p2').innerText = langPronouns.p2;
+        document.getElementById('p-p3').innerText = langPronouns.p3;
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark');
+        appState.theme = document.body.classList.contains('dark') ? 'dark' : 'light';
+        saveData();
+    }
+
+    function switchViewport(type) {
+        appState.viewport = type;
+        applyViewportClass(type);
+        saveData();
+    }
+
+    function applyViewportClass(type) {
+        const wrapper = document.getElementById('appWrapper');
+        wrapper.className = 'app-wrapper';
+        if (type === 'mobile') wrapper.classList.add('viewport-mobile');
+        if (type === 'tablet') wrapper.classList.add('viewport-tablet');
+    }
+
+    function switchTab(tabId, evt) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+        if (evt && evt.target) {
+            evt.target.classList.add('active');
+        } else {
+            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+        
+        const targetTab = document.getElementById(`tab-${tabId}`);
+        if (targetTab) {
+            targetTab.classList.remove('hidden');
         }
 
-        function addConjRow(table, label, val) {
+        if (tabId === 'quiz') initQuiz();
+    }
+
+    // --- VOCABULARY & FORM MANAGEMENT ---
+    function toggleVerbFields() {
+        const isVerb = document.getElementById('wordType').value === 'verb';
+        document.getElementById('verbFields').classList.toggle('hidden', !isVerb);
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        
+        const id = document.getElementById('vocabId').value;
+        const target = document.getElementById('targetWord').value.trim();
+        const translation = document.getElementById('translation').value.trim();
+        const type = document.getElementById('wordType').value;
+
+        let conjugations = null;
+        if (type === 'verb') {
+            conjugations = {
+                s1: document.getElementById('conj_s1').value.trim(),
+                s2: document.getElementById('conj_s2').value.trim(),
+                s3: document.getElementById('conj_s3').value.trim(),
+                p1: document.getElementById('conj_p1').value.trim(),
+                p2: document.getElementById('conj_p2').value.trim(),
+                p3: document.getElementById('conj_p3').value.trim()
+            };
+        }
+
+        if (id) {
+            const index = appState.vocabularies.findIndex(v => String(v.id) === String(id));
+            if (index !== -1) {
+                appState.vocabularies[index] = {
+                    ...appState.vocabularies[index],
+                    target,
+                    translation,
+                    type,
+                    conjugations
+                };
+            }
+        } else {
+            const newVocab = {
+                id: generateUniqueId(),
+                user: appState.currentUser,
+                lang: appState.currentLang,
+                target,
+                translation,
+                type,
+                conjugations,
+                box: 1,
+                nextReview: Date.now()
+            };
+            appState.vocabularies.push(newVocab);
+        }
+
+        saveData();
+        resetForm();
+        renderVocabTable();
+    }
+
+    function resetForm() {
+        document.getElementById('vocabForm').reset();
+        document.getElementById('vocabId').value = '';
+        document.getElementById('editorTitle').innerText = 'Neue Vokabel hinzufügen';
+        document.getElementById('wordType').value = 'noun';
+        toggleVerbFields();
+    }
+
+    function autoFillConjugation() {
+        const verb = document.getElementById('targetWord').value.trim().toLowerCase();
+        if (!verb) return;
+
+        if (appState.currentLang === 'es') {
+            let stem = verb.slice(0, -2);
+            let ending = verb.slice(-2);
+
+            if (ending === 'ar') {
+                document.getElementById('conj_s1').value = stem + 'o';
+                document.getElementById('conj_s2').value = stem + 'as';
+                document.getElementById('conj_s3').value = stem + 'a';
+                document.getElementById('conj_p1').value = stem + 'amos';
+                document.getElementById('conj_p2').value = stem + 'áis';
+                document.getElementById('conj_p3').value = stem + 'an';
+            } else if (ending === 'er') {
+                document.getElementById('conj_s1').value = stem + 'o';
+                document.getElementById('conj_s2').value = stem + 'es';
+                document.getElementById('conj_s3').value = stem + 'e';
+                document.getElementById('conj_p1').value = stem + 'emos';
+                document.getElementById('conj_p2').value = stem + 'éis';
+                document.getElementById('conj_p3').value = stem + 'en';
+            } else if (ending === 'ir') {
+                document.getElementById('conj_s1').value = stem + 'o';
+                document.getElementById('conj_s2').value = stem + 'es';
+                document.getElementById('conj_s3').value = stem + 'e';
+                document.getElementById('conj_p1').value = stem + 'imos';
+                document.getElementById('conj_p2').value = stem + 'ís';
+                document.getElementById('conj_p3').value = stem + 'en';
+            }
+        } else if (appState.currentLang === 'en') {
+            document.getElementById('conj_s1').value = verb;
+            document.getElementById('conj_s2').value = verb;
+            document.getElementById('conj_s3').value = verb + (verb.endsWith('s') || verb.endsWith('ch') ? 'es' : 's');
+            document.getElementById('conj_p1').value = verb;
+            document.getElementById('conj_p2').value = verb;
+            document.getElementById('conj_p3').value = verb;
+        }
+    }
+
+    function renderVocabTable() {
+        const tbody = document.getElementById('vocabTableBody');
+        tbody.innerHTML = '';
+
+        const filtered = appState.vocabularies.filter(
+            v => v.user === appState.currentUser && v.lang === appState.currentLang
+        );
+
+        document.getElementById('vocabCount').innerText = filtered.length;
+
+        filtered.forEach(v => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${label}</td>
-                <td style="font-weight:700; color:#a5b4fc;">
-                    ${val} <button class="audio-btn" onclick="speakText('${val}')">🔊</button>
+                <td><strong>${escapeHtml(v.target)}</strong></td>
+                <td>${escapeHtml(v.translation)}</td>
+                <td><span class="badge" style="background:var(--border); color:var(--text);">${v.type}</span></td>
+                <td>Box ${v.box}</td>
+                <td>
+                    <button class="secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="editVocab('${v.id}')">✏️</button>
+                    <button class="secondary" style="padding:4px 8px; font-size:0.75rem; color:var(--danger);" onclick="deleteVocab('${v.id}')">🗑️</button>
                 </td>
             `;
-            table.appendChild(tr);
+            tbody.appendChild(tr);
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+
+    function editVocab(id) {
+        const item = appState.vocabularies.find(v => String(v.id) === String(id));
+        if (!item) return;
+
+        document.getElementById('vocabId').value = item.id;
+        document.getElementById('targetWord').value = item.target;
+        document.getElementById('translation').value = item.translation;
+        document.getElementById('wordType').value = item.type;
+
+        toggleVerbFields();
+
+        if (item.type === 'verb' && item.conjugations) {
+            document.getElementById('conj_s1').value = item.conjugations.s1 || '';
+            document.getElementById('conj_s2').value = item.conjugations.s2 || '';
+            document.getElementById('conj_s3').value = item.conjugations.s3 || '';
+            document.getElementById('conj_p1').value = item.conjugations.p1 || '';
+            document.getElementById('conj_p2').value = item.conjugations.p2 || '';
+            document.getElementById('conj_p3').value = item.conjugations.p3 || '';
         }
 
-        function speakText(text) {
-            if ('speechSynthesis' in window && text) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                const currentLang = appData.userLangs[appData.currentUser];
-                if (currentLang === 'Spanisch') utterance.lang = 'es-ES';
-                else if (currentLang === 'Englisch') utterance.lang = 'en-US';
-                else if (currentLang === 'Französisch') utterance.lang = 'fr-FR';
-                window.speechSynthesis.speak(utterance);
-            }
+        document.getElementById('editorTitle').innerText = 'Vokabel bearbeiten';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteVocab(id) {
+        if (confirm('Vokabel wirklich löschen?')) {
+            appState.vocabularies = appState.vocabularies.filter(v => String(v.id) !== String(id));
+            saveData();
+            renderVocabTable();
+        }
+    }
+
+    // --- LEITNER QUIZ SYSTEM ---
+    let currentQuizQueue = [];
+    let currentQuizItem = null;
+
+    function initQuiz() {
+        if (processTimer) clearTimeout(processTimer);
+        const now = Date.now();
+        currentQuizQueue = appState.vocabularies.filter(
+            v => v.user === appState.currentUser && v.lang === appState.currentLang && (v.nextReview || 0) <= now
+        );
+
+        document.getElementById('dueCount').innerText = currentQuizQueue.length;
+        loadNextCard();
+    }
+
+    function loadNextCard() {
+        if (processTimer) clearTimeout(processTimer);
+        document.getElementById('cardBack').classList.add('hidden');
+        document.getElementById('cardExtra').classList.add('hidden');
+        document.getElementById('resetNotice').classList.add('hidden');
+        document.getElementById('quizControls').classList.add('hidden');
+        document.getElementById('revealBtnContainer').classList.remove('hidden');
+
+        if (currentQuizQueue.length === 0) {
+            document.getElementById('cardFront').innerText = '🎉 Keine fälligen Vokabeln!';
+            document.getElementById('cardBack').innerText = '';
+            document.getElementById('cardExtra').innerText = '';
+            document.getElementById('revealBtnContainer').classList.add('hidden');
+            currentQuizItem = null;
+            return;
         }
 
-        function speakQuizWord() {
-            if (currentQuizItem) {
-                const dir = document.getElementById('quizDirection').value;
-                const text = dir === 'de_foreign' ? currentQuizItem.translation : currentQuizItem.word;
-                speakText(text);
-            }
+        currentQuizItem = currentQuizQueue[0];
+        document.getElementById('cardFront').innerText = currentQuizItem.target;
+        
+        let extraText = '';
+        if (currentQuizItem.type === 'verb' && currentQuizItem.conjugations) {
+            const p = PRONOUNS[appState.currentLang] || PRONOUNS.es;
+            const c = currentQuizItem.conjugations;
+            extraText = `Singular: ${p.s1} ${c.s1}, ${p.s2} ${c.s2}, ${p.s3} ${c.s3} | Plural: ${p.p1} ${c.p1}, ${p.p2} ${c.p2}, ${p.p3} ${c.p3}`;
         }
+        
+        document.getElementById('cardBack').innerText = currentQuizItem.translation;
+        document.getElementById('cardExtra').innerText = extraText;
+    }
 
-        function startQuiz() {
-            const currentLang = appData.userLangs[appData.currentUser];
-            const dir = document.getElementById('quizDirection').value;
-            const filter = document.getElementById('quizFilter').value;
+    function revealAnswer() {
+        if (!currentQuizItem) return;
+        document.getElementById('cardBack').classList.remove('hidden');
+        if (document.getElementById('cardExtra').innerText) {
+            document.getElementById('cardExtra').classList.remove('hidden');
+        }
+        document.getElementById('quizControls').classList.remove('hidden');
+        document.getElementById('revealBtnContainer').classList.add('hidden');
+    }
 
-            let available = appData.vocabularies.filter(v => v.user === appData.currentUser && v.lang === currentLang);
+    function processAnswer(success) {
+        if (!currentQuizItem) return;
 
-            if (filter === 'due') {
-                available = available.filter(v => !v.nextReview || v.nextReview <= Date.now());
-            }
-
-            if (dir === 'verb_conj') {
-                available = available.filter(v => v.type === 'verb' && v.conjugations?.pres?.length === 6);
-            }
-
-            const card = document.getElementById('quizCard');
-            const quizInput = document.getElementById('quizInput');
-            const quizCheckBtn = document.getElementById('quizCheckBtn');
-            const quizAudioBtn = document.getElementById('quizAudioBtn');
-
-            card.classList.remove('shake', 'correct-glow');
-            document.getElementById('quizFeedback').classList.add('hidden');
-            document.getElementById('quizHint').classList.add('hidden');
-            quizInput.value = '';
-
-            if (available.length === 0) {
-                document.getElementById('quizPrompt').textContent = "Keine Vokabeln";
-                document.getElementById('quizSubprompt').textContent = filter === 'due' ? "Alle fälligen Wörter gelernt! 🎉" : "Trage erst passende Vokabeln ein!";
-                document.getElementById('quizDueBadge').className = 'hidden';
-                document.getElementById('hintBtn').classList.add('hidden');
-                quizInput.disabled = true;
-                quizCheckBtn.disabled = true;
-                quizAudioBtn.disabled = true;
-                currentQuizItem = null;
-                return;
-            }
-
-            quizInput.disabled = false;
-            quizCheckBtn.disabled = false;
-            quizAudioBtn.disabled = false;
-
-            available.sort((a, b) => (a.box || 1) - (b.box || 1));
-            const poolSize = Math.min(available.length, 3);
-            const randomIndex = Math.floor(Math.random() * poolSize);
-            currentQuizItem = available[randomIndex];
-
-            const isDue = !currentQuizItem.nextReview || currentQuizItem.nextReview <= Date.now();
-            document.getElementById('quizDueBadge').className = isDue ? 'box-badge' : 'hidden';
-
-            document.getElementById('quizBadge').textContent = `Box ${currentQuizItem.box || 1}`;
-
-            if (dir === 'foreign_de') {
-                document.getElementById('quizPrompt').textContent = currentQuizItem.word;
-                document.getElementById('quizSubprompt').textContent = "Wie lautet die deutsche Übersetzung?";
-                currentQuizTargetAnswer = currentQuizItem.translation;
-            } else if (dir === 'de_foreign') {
-                document.getElementById('quizPrompt').textContent = currentQuizItem.translation;
-                document.getElementById('quizSubprompt').textContent = `Übersetze ins ${currentLang}:`;
-                currentQuizTargetAnswer = currentQuizItem.word;
-            } else if (dir === 'verb_conj') {
-                const persons = ['yo (1. Sg)', 'tú (2. Sg)', 'él/ella (3. Sg)', 'nosotros (1. Pl)', 'vosotros (2. Pl)', 'ellos (3. Pl)'];
-                const pIndex = Math.floor(Math.random() * 6);
-                const pLabel = persons[pIndex];
-                
-                document.getElementById('quizPrompt').textContent = `${currentQuizItem.word} (${pLabel})`;
-                document.getElementById('quizSubprompt').textContent = "Konjugationsform Präsens:";
-                currentQuizTargetAnswer = (currentQuizItem.conjugations?.pres?.[pIndex]) ? currentQuizItem.conjugations.pres[pIndex] : currentQuizItem.word;
-            }
-
-            if (currentQuizItem.example) {
-                document.getElementById('hintBtn').classList.remove('hidden');
-                const blankExample = currentQuizItem.example.replace(new RegExp(currentQuizItem.word, 'gi'), '_____');
-                document.getElementById('quizHint').textContent = `"${blankExample}"`;
+        const index = appState.vocabularies.findIndex(v => String(v.id) === String(currentQuizItem.id));
+        if (index !== -1) {
+            if (success) {
+                appState.vocabularies[index].box = Math.min(5, appState.vocabularies[index].box + 1);
             } else {
-                document.getElementById('hintBtn').classList.add('hidden');
+                appState.vocabularies[index].box = 1;
+                document.getElementById('resetNotice').classList.remove('hidden');
             }
+
+            const daysToAdd = BOX_INTERVALS[appState.vocabularies[index].box];
+            appState.vocabularies[index].nextReview = Date.now() + (daysToAdd * 24 * 60 * 60 * 1000);
+
+            saveData();
         }
 
-        function toggleHint() {
-            document.getElementById('quizHint').classList.toggle('hidden');
+        currentQuizQueue.shift();
+        document.getElementById('dueCount').innerText = currentQuizQueue.length;
+
+        if (!success) {
+            processTimer = setTimeout(() => {
+                loadNextCard();
+            }, 1200);
+        } else {
+            loadNextCard();
         }
+    }
 
-        function checkAnswer() {
-            if (!currentQuizItem) return;
+    function speakCurrentWord() {
+        if (!currentQuizItem) return;
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(currentQuizItem.target);
+            utterance.lang = appState.currentLang;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
 
-            updateStreak();
+    // --- MAP SYSTEM (D3.js) ---
+    function initMap() {
+        const container = d3.select("#map-container");
+        container.selectAll("*").remove();
 
-            if (!appData.stats) appData.stats = { totalAnswered: 0, totalCorrect: 0 };
-            appData.stats.totalAnswered = (appData.stats.totalAnswered || 0) + 1;
+        const width = container.node().getBoundingClientRect().width || 800;
+        const height = 400;
 
-            const input = document.getElementById('quizInput').value.trim().toLowerCase();
-            const target = currentQuizTargetAnswer.trim().toLowerCase();
-            const card = document.getElementById('quizCard');
-            const feedback = document.getElementById('quizFeedback');
-            const resTitle = document.getElementById('feedbackResult');
-            const resDetail = document.getElementById('feedbackDetail');
-            const actions = document.getElementById('feedbackActions');
+        const svg = container.append("svg")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("viewBox", `0 0 ${width} ${height}`);
 
-            feedback.classList.remove('hidden');
+        const projection = d3.geoMercator()
+            .scale(width / 6.5)
+            .translate([width / 2, height / 1.5]);
 
-            if (input === target) {
-                appData.stats.totalCorrect = (appData.stats.totalCorrect || 0) + 1;
-                card.classList.add('correct-glow');
-                resTitle.textContent = "Richtig! 🎉";
-                resTitle.style.color = "var(--accent-green)";
-                
-                const nextBox = Math.min((currentQuizItem.box || 1) + 1, 5);
-                currentQuizItem.box = nextBox;
-                
-                const daysToAdd = BOX_INTERVALS[nextBox];
-                currentQuizItem.nextReview = Date.now() + (daysToAdd * 24 * 60 * 60 * 1000);
-                
-                resDetail.textContent = `Aufstieg in Box ${nextBox}. Nächste Wiederholung in ${daysToAdd} Tag(en).`;
-                saveToLocalStorage();
+        const path = d3.geoPath().projection(projection);
 
-                actions.innerHTML = `<button class="btn btn-primary" onclick="nextQuestion()">Nächste Frage ➔</button>`;
+        d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(data => {
+            const countries = topojson.feature(data, data.objects.countries);
+
+            svg.selectAll("path")
+                .data(countries.features)
+                .enter().append("path")
+                .attr("class", "country")
+                .attr("d", path)
+                .on("click", function (event, d) {
+                    d3.selectAll(".country").classed("active", false);
+                    d3.select(this).classed("active", true);
+                });
+        }).catch(err => {
+            console.error("Fehler beim Laden der Kartendaten:", err);
+            container.html('<div style="color:#ef4444; padding:20px; text-align:center;">Kartendaten konnten nicht geladen werden (Internetverbindung prüfen).</div>');
+        });
+    }
+
+    // --- DATA IMPORT / EXPORT ---
+    function exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState.vocabularies, null, 2));
+        downloadFile(dataStr, `lingovault_backup_${Date.now()}.json`);
+    }
+
+    function exportCSV() {
+        let csv = "id,user,lang,target,translation,type,box,conjugations\n";
+        appState.vocabularies.forEach(v => {
+            const targetEsc = `"${(v.target || '').replace(/"/g, '""')}"`;
+            const transEsc = `"${(v.translation || '').replace(/"/g, '""')}"`;
+            const conjEsc = `"${(JSON.stringify(v.conjugations || {})).replace(/"/g, '""')}"`;
+            csv += `"${v.id}","${v.user}","${v.lang}",${targetEsc},${transEsc},"${v.type}",${v.box},${conjEsc}\n`;
+        });
+        const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+        downloadFile(dataStr, `lingovault_export_${Date.now()}.csv`);
+    }
+
+    function downloadFile(dataStr, fileName) {
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", fileName);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function handleImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            if (file.name.endsWith('.json')) {
+                importJSON(content);
+            } else if (file.name.endsWith('.csv')) {
+                importCSV(content);
+            }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    function importJSON(content) {
+        try {
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed)) {
+                const processed = parsed.map(item => ({
+                    ...item,
+                    id: item.id || generateUniqueId()
+                }));
+                appState.vocabularies = [...appState.vocabularies, ...processed];
+                saveData();
+                renderVocabTable();
+                alert('JSON Import erfolgreich!');
+            }
+        } catch (err) {
+            alert('Fehler beim Parsen der JSON-Datei.');
+        }
+    }
+
+    function CSVToArray(strData, strDelimiter = ",") {
+        const objPattern = new RegExp(
+            ("(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
+             "(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|" +
+             "([^\"\\" + strDelimiter + "\\r\\n]*))"), "gi"
+        );
+        const arrData = [[]];
+        let arrMatches = null;
+        while (arrMatches = objPattern.exec(strData)) {
+            const strMatchedDelimiter = arrMatches[1];
+            if (strMatchedDelimiter.length && strMatchedDelimiter !== strDelimiter) {
+                arrData.push([]);
+            }
+            let strMatchedValue;
+            if (arrMatches[2]) {
+                strMatchedValue = arrMatches[2].replace(new RegExp("\"\"", "g"), "\"");
             } else {
-                card.classList.add('shake');
-                setTimeout(() => card.classList.remove('shake'), 400);
-
-                resTitle.textContent = "Nicht ganz richtig! ❌";
-                resTitle.style.color = "var(--accent-red)";
-                resDetail.textContent = `Möchtest du es nochmal versuchen oder die Lösung sehen?`;
-
-                actions.innerHTML = `
-                    <button class="btn btn-secondary" onclick="retryAnswer()">🔄 Nochmal versuchen</button>
-                    <button class="btn btn-primary" onclick="showSolution()">👁️ Lösung anzeigen</button>
-                `;
+                strMatchedValue = arrMatches[3];
             }
+            arrData[arrData.length - 1].push(strMatchedValue);
         }
+        return arrData;
+    }
 
-        function retryAnswer() {
-            document.getElementById('quizFeedback').classList.add('hidden');
-            const input = document.getElementById('quizInput');
-            input.value = '';
-            input.focus();
-        }
+    function importCSV(content) {
+        try {
+            const rows = CSVToArray(content);
+            let count = 0;
+            for (let i = 1; i < rows.length; i++) {
+                const parts = rows[i];
+                if (!parts || parts.length < 5 || !parts[3] || parts[3].trim() === "") continue;
+                
+                let conjugations = null;
+                if (parts[7]) {
+                    try { conjugations = JSON.parse(parts[7]); } catch(e) {}
+                }
 
-        function showSolution() {
-            const resTitle = document.getElementById('feedbackResult');
-            const resDetail = document.getElementById('feedbackDetail');
-            const actions = document.getElementById('feedbackActions');
-
-            resTitle.textContent = "Lösung 💡";
-            resTitle.style.color = "#a5b4fc";
-            resDetail.textContent = `Die richtige Antwort lautet: "${currentQuizTargetAnswer}"`;
-
-            currentQuizItem.box = 1;
-            currentQuizItem.nextReview = Date.now();
-            saveToLocalStorage();
-
-            actions.innerHTML = `<button class="btn btn-primary" onclick="nextQuestion()">Nächste Frage ➔</button>`;
-        }
-
-        function nextQuestion() {
-            startQuiz();
-        }
-
-        function renderStats() {
-            const currentLang = appData.userLangs[appData.currentUser];
-            const list = appData.vocabularies.filter(v => v.user === appData.currentUser && v.lang === currentLang);
-
-            document.getElementById('statTotal').textContent = list.length;
-            
-            const dueCount = list.filter(v => !v.nextReview || v.nextReview <= Date.now()).length;
-            document.getElementById('statDue').textContent = dueCount;
-
-            const streak = (appData.stats && appData.stats.streakDays) ? appData.stats.streakDays : 0;
-            document.getElementById('statStreak').textContent = `${streak} 🔥`;
-
-            const total = (appData.stats && appData.stats.totalAnswered) ? appData.stats.totalAnswered : 0;
-            const correct = (appData.stats && appData.stats.totalCorrect) ? appData.stats.totalCorrect : 0;
-            const acc = total > 0 ? Math.round((correct / total) * 100) : 100;
-            document.getElementById('statAccuracy').textContent = `${acc}%`;
-
-            const boxCounts = [0, 0, 0, 0, 0, 0];
-            list.forEach(v => {
-                const b = v.box || 1;
-                boxCounts[b] = (boxCounts[b] || 0) + 1;
-            });
-
-            const barContainer = document.getElementById('boxBarContainer');
-            const legendContainer = document.getElementById('boxLegend');
-            barContainer.innerHTML = '';
-            legendContainer.innerHTML = '';
-
-            const colors = ['#ef4444', '#f97316', '#f59e0b', '#3b82f6', '#10b981'];
-
-            for (let i = 1; i <= 5; i++) {
-                const count = boxCounts[i] || 0;
-                const pct = list.length > 0 ? (count / list.length) * 100 : 0;
-
-                const seg = document.createElement('div');
-                seg.className = 'box-bar-segment';
-                seg.style.width = `${pct}%`;
-                seg.style.background = colors[i - 1];
-                barContainer.appendChild(seg);
-
-                const leg = document.createElement('span');
-                leg.textContent = `B${i}: ${count}`;
-                legendContainer.appendChild(leg);
+                appState.vocabularies.push({
+                    id: generateUniqueId(),
+                    user: parts[1] || appState.currentUser,
+                    lang: parts[2] || appState.currentLang,
+                    target: parts[3].trim(),
+                    translation: parts[4] ? parts[4].trim() : '',
+                    type: parts[5] || 'noun',
+                    box: parseInt(parts[6]) || 1,
+                    conjugations: conjugations,
+                    nextReview: Date.now()
+                });
+                count++;
             }
+            saveData();
+            renderVocabTable();
+            alert(`${count} Vokabeln aus CSV importiert!`);
+        } catch (e) {
+            alert('Fehler beim Einlesen der CSV-Datei.');
         }
-
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
-            const dlAnchorElem = document.createElement('a');
-            dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `LingoVault_Backup_${new Date().toISOString().slice(0,10)}.json`);
-            dlAnchorElem.click();
-        }
-
-        function importData(event) {
-            const fileReader = new FileReader();
-            fileReader.onload = function(e) {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (imported && Array.isArray(imported.vocabularies)) {
-                        appData = imported;
-                        saveToLocalStorage();
-                        initUserAndLang();
-                        renderVocabList();
-                        alert('Daten erfolgreich importiert!');
-                    } else {
-                        throw new Error('Ungültiges Format');
-                    }
-                } catch (err) {
-                    alert('Fehler beim Lesen der Backup-Datei. Bitte erstelle ein gültiges JSON-Backup.');
-                }
-            };
-            fileReader.readAsText(event.target.files[0]);
-        }
-
-        function importCSV() {
-            const text = document.getElementById('csvImportText').value.trim();
-            if (!text) return;
-
-            const lines = text.split('\n');
-            const currentLang = appData.userLangs[appData.currentUser];
-            let addedCount = 0;
-
-            lines.forEach((line, index) => {
-                const parts = line.split(';');
-                if (parts.length >= 2) {
-                    const word = parts[0].trim();
-                    const trans = parts[1].trim();
-                    const type = parts[2] ? parts[2].trim().toLowerCase() : 'substantiv';
-
-                    if (word && trans) {
-                        appData.vocabularies.push({
-                            id: Date.now() + index,
-                            user: appData.currentUser,
-                            lang: currentLang,
-                            word: word,
-                            translation: trans,
-                            type: type.includes('verb') ? 'verb' : 'substantiv',
-                            box: 1,
-                            nextReview: Date.now()
-                        });
-                        addedCount++;
-                    }
-                }
-            });
-
-            saveToLocalStorage();
-            document.getElementById('csvImportText').value = '';
-            alert(`${addedCount} Vokabeln erfolgreich per CSV importiert!`);
-            renderVocabList();
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
