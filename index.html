@@ -478,6 +478,21 @@
             width: auto; padding: 6px 10px; font-size: 0.78rem; margin: 2px 4px 2px 0;
         }
         .family-link-line { font-size: 0.75rem; color: #a5b4fc; margin-top: 2px; }
+        .duplicate-warning-box {
+            margin-top: 8px; padding: 10px; border-radius: var(--radius-md);
+            background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35);
+        }
+        .duplicate-warning-text { font-size: 0.78rem; color: #fbbf24; margin-bottom: 8px; }
+
+        /* Konjugationsfelder im Formular: feste Pronomen + editierbare Form, Singular/Plural nebeneinander */
+        .conj-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+        .conj-form-grid-single { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .conj-form-row { display: flex; align-items: center; gap: 8px; }
+        .conj-form-pronoun {
+            flex: 0 0 auto; min-width: 62px; font-size: 0.78rem;
+            color: var(--text-muted); font-weight: 700;
+        }
+        .conj-form-row input { flex: 1; min-width: 0; }
 
         /* Tagesziel-Ring */
         #dailyGoalRing svg text { font-family: inherit; }
@@ -570,7 +585,7 @@
                 </div>
 
                 <div class="search-box-row">
-                    <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen..." oninput="renderVocabList()">
+                    <input type="text" id="searchInput" placeholder="Vokabeln durchsuchen (auch Konjugationen)..." oninput="renderVocabList()">
                     <button class="btn btn-secondary" onclick="openAddModal()" style="width: auto; padding: 12px 18px;">+</button>
                 </div>
             </div>
@@ -587,7 +602,10 @@
                     
                     <div class="form-group">
                         <label>Wort / Phrase / Verb (Infinitiv)</label>
-                        <input type="text" id="inputWord" placeholder="z. B. hablar / to speak" required oninput="autoGenerateConjugations()">
+                        <input type="text" id="inputWord" placeholder="z. B. hablar / to speak" required autocapitalize="off" autocorrect="off" spellcheck="false" oninput="onWordInputChanged()">
+                        <div id="duplicateWarning" class="hidden"></div>
+                        <div id="conjugatedFormSuggestion" class="hidden"></div>
+                        <div id="formulationSuggestion" class="hidden"></div>
                     </div>
 
                     <div class="form-group">
@@ -596,10 +614,16 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Wortart</label>
-                        <select id="inputType" onchange="toggleVerbFields()">
-                            <option value="substantiv">Substantiv / Sonstige</option>
+                        <label>Wortart <span style="font-weight:400; text-transform:none; color:var(--text-muted);">(automatisch erkannt, manuell änderbar)</span></label>
+                        <select id="inputType" onchange="typeManuallySet = true; toggleVerbFields();">
+                            <option value="substantiv">Substantiv</option>
                             <option value="verb">Verb (mit Konjugationstabelle)</option>
+                            <option value="adjektiv">Adjektiv</option>
+                            <option value="pronomen">Personalpronomen</option>
+                            <option value="adverb">Adverb</option>
+                            <option value="praeposition">Präposition</option>
+                            <option value="formulierung">Redewendung / Formulierung</option>
+                            <option value="sonstige">Sonstige</option>
                         </select>
                     </div>
 
@@ -613,19 +637,49 @@
                         </div>
 
                         <label style="color: #a5b4fc; margin-top: 10px;">Konjugation Präsens (Gegenwart)</label>
-                        <div class="grid-2">
-                            <input type="text" id="c_pres_1" placeholder="1. Sg (yo / I)">
-                            <input type="text" id="c_pres_2" placeholder="2. Sg (tú / you)">
-                            <input type="text" id="c_pres_3" placeholder="3. Sg (él / he)">
-                            <input type="text" id="c_pres_4" placeholder="1. Pl (nosotros / we)">
-                            <input type="text" id="c_pres_5" placeholder="2. Pl (vosotros / you)">
-                            <input type="text" id="c_pres_6" placeholder="3. Pl (ellos / they)">
+                        <div class="conj-form-grid">
+                            <div>
+                                <div class="conj-col-title">Singular</div>
+                                <div class="conj-form-row">
+                                    <span class="conj-form-pronoun" id="pronounLabel_pres_1">1. Sg</span>
+                                    <input type="text" id="c_pres_1">
+                                </div>
+                                <div class="conj-form-row">
+                                    <span class="conj-form-pronoun" id="pronounLabel_pres_2">2. Sg</span>
+                                    <input type="text" id="c_pres_2">
+                                </div>
+                                <div class="conj-form-row">
+                                    <span class="conj-form-pronoun" id="pronounLabel_pres_3">3. Sg</span>
+                                    <input type="text" id="c_pres_3">
+                                </div>
+                            </div>
+                            <div>
+                                <div class="conj-col-title">Plural</div>
+                                <div class="conj-form-row">
+                                    <span class="conj-form-pronoun" id="pronounLabel_pres_4">1. Pl</span>
+                                    <input type="text" id="c_pres_4">
+                                </div>
+                                <div class="conj-form-row">
+                                    <span class="conj-form-pronoun" id="pronounLabel_pres_5">2. Pl</span>
+                                    <input type="text" id="c_pres_5">
+                                </div>
+                                <div class="conj-form-row">
+                                    <span class="conj-form-pronoun" id="pronounLabel_pres_6">3. Pl</span>
+                                    <input type="text" id="c_pres_6">
+                                </div>
+                            </div>
                         </div>
 
                         <label style="color: #a5b4fc; margin-top: 10px;">Präteritum (Vergangenheit)</label>
-                        <div class="grid-2">
-                            <input type="text" id="c_past_1" placeholder="1. Sg">
-                            <input type="text" id="c_past_3" placeholder="3. Sg">
+                        <div class="conj-form-grid-single">
+                            <div class="conj-form-row">
+                                <span class="conj-form-pronoun" id="pronounLabel_past_1">1. Sg</span>
+                                <input type="text" id="c_past_1">
+                            </div>
+                            <div class="conj-form-row">
+                                <span class="conj-form-pronoun" id="pronounLabel_past_3">3. Sg</span>
+                                <input type="text" id="c_past_3">
+                            </div>
                         </div>
 
                         <label style="color: #a5b4fc; margin-top: 10px;">Perfekt (Partizip)</label>
@@ -827,6 +881,13 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; text-transform: none; font-size: 0.85rem; cursor: pointer;">
+                        <input type="checkbox" id="lowercaseFirstLetterToggle" onchange="toggleLowercaseSetting()" style="width: auto;" checked>
+                        Ersten Buchstaben beim Speichern automatisch klein schreiben
+                    </label>
+                </div>
+
                 <hr style="border-color: var(--card-border); margin: 20px 0;">
 
                 <h3 style="margin-bottom: 10px; font-size: 0.95rem;">Daten-Sicherung (JSON)</h3>
@@ -958,7 +1019,7 @@
 
         // Personalpronomen je Sprache: [1.Sg, 2.Sg, 3.Sg, 1.Pl, 2.Pl, 3.Pl]
         const PRONOUNS = {
-            'Spanisch':      ['yo', 'tú', 'él / ella / Ud.', 'nosotros', 'vosotros', 'ellos / ellas'],
+            'Spanisch':      ['yo', 'tú', 'él / ella / ello', 'nosotros', 'vosotros', 'ellos / ellas'],
             'Englisch':      ['I', 'you', 'he / she / it', 'we', 'you (all)', 'they'],
             'Französisch':   ['je', 'tu', 'il / elle', 'nous', 'vous', 'ils / elles'],
             'Italienisch':   ['io', 'tu', 'lui / lei', 'noi', 'voi', 'loro'],
@@ -971,6 +1032,44 @@
 
         function getPronouns(lang) {
             return PRONOUNS[lang] || PRONOUNS['Englisch'];
+        }
+
+        // Sprachspezifische Beispieltexte für die Eingabefelder beim Anlegen einer Vokabel.
+        const WORD_PLACEHOLDER_EXAMPLES = {
+            'Spanisch':      { word: 'z. B. hablar (Verb) / la casa (Substantiv)', example: 'z. B. Yo hablo español con mis amigos.' },
+            'Englisch':      { word: 'z. B. to speak (Verb) / the house (Substantiv)', example: 'z. B. I speak English with my friends.' },
+            'Französisch':   { word: 'z. B. parler (Verb) / la maison (Substantiv)', example: 'z. B. Je parle français avec mes amis.' },
+            'Italienisch':   { word: 'z. B. parlare (Verb) / la casa (Substantiv)', example: 'z. B. Io parlo italiano con i miei amici.' },
+            'Portugiesisch': { word: 'z. B. falar (Verb) / a casa (Substantiv)', example: 'z. B. Eu falo português com meus amigos.' },
+            'Deutsch':       { word: 'z. B. sprechen (Verb) / das Haus (Substantiv)', example: 'z. B. Ich spreche mit meinen Freunden.' },
+            'Russisch':      { word: 'z. B. говорить (Verb) / дом (Substantiv)', example: 'z. B. Я говорю по-русски с друзьями.' },
+            'Japanisch':     { word: 'z. B. 話す / hanasu (Verb) / 家 / ie (Substantiv)', example: 'z. B. 私は友達と日本語を話します。' },
+            'Chinesisch':    { word: 'z. B. 说 / shuō (Verb) / 家 / jiā (Substantiv)', example: 'z. B. 我和朋友说中文。' }
+        };
+
+        // Aktualisiert alle Platzhalter/Beschriftungen im Formular passend zur aktuell
+        // gewählten Sprache - inkl. der Personalpronomen bei den Konjugationsfeldern,
+        // die vorher fest auf Spanisch/Englisch eingestellt waren.
+        function updateFormPlaceholders() {
+            const lang = appData.userLangs[appData.currentUser];
+            const cfg = WORD_PLACEHOLDER_EXAMPLES[lang] || { word: 'Wort oder Phrase eingeben...', example: 'Beispielsatz mit dem Wort...' };
+
+            const wordEl = document.getElementById('inputWord');
+            const exampleEl = document.getElementById('inputExample');
+            if (wordEl) wordEl.placeholder = cfg.word;
+            if (exampleEl) exampleEl.placeholder = cfg.example;
+
+            // Feste, nicht editierbare Pronomen-Labels neben den Konjugationsfeldern -
+            // für alle Sprachen über getPronouns() abgedeckt.
+            const persons = getPronouns(lang);
+            persons.forEach((p, i) => {
+                const label = document.getElementById(`pronounLabel_pres_${i + 1}`);
+                if (label) label.textContent = p;
+            });
+            const pastLabel1 = document.getElementById('pronounLabel_past_1');
+            const pastLabel3 = document.getElementById('pronounLabel_past_3');
+            if (pastLabel1) pastLabel1.textContent = persons[0];
+            if (pastLabel3) pastLabel3.textContent = persons[2];
         }
 
         let mapVisible = true;
@@ -991,14 +1090,53 @@
         if (!appData.languages) appData.languages = { 'Holger': ['Spanisch'], 'Sanni': ['Englisch'] };
         if (!appData.languages['Holger']) appData.languages['Holger'] = ['Spanisch'];
         if (!appData.languages['Sanni']) appData.languages['Sanni'] = ['Englisch'];
+        if (!appData.vocabularies) appData.vocabularies = [];
+        if (!appData.settings) appData.settings = { lowercaseFirstLetter: true };
+
+        // ---------- KRITISCHER BUGFIX: eindeutige ID-Vergabe ----------
+        // Vorher wurde Date.now() (Millisekunden-Zeitstempel) direkt als ID verwendet.
+        // Bei schneller Eingabe - und besonders auf iOS Safari, das die Zeitauflösung
+        // aus Datenschutzgründen reduziert - konnten mehrere neue Vokabeln dieselbe ID
+        // erhalten. Da Löschen/Bearbeiten über die ID arbeitet, führte das dazu, dass
+        // beim Bearbeiten/Löschen EINES Eintrags versehentlich ALLE Einträge mit
+        // derselben ID betroffen waren - das war die Ursache für den gemeldeten
+        // Datenverlust bei der zweiten Sprache. generateUniqueId() prüft aktiv gegen
+        // alle vorhandenen IDs und vergibt bei Kollision eine neue.
+        function generateUniqueId() {
+            let id;
+            do {
+                id = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+            } while (appData.vocabularies.some(v => v.id === id));
+            return id;
+        }
+
+        // Repariert bereits vorhandene Datensätze mit doppelten IDs (Altlast des obigen
+        // Bugs). Behält die ID des zuerst gefundenen Eintrags, allen weiteren mit
+        // derselben ID wird eine neue eindeutige ID zugewiesen. Läuft einmalig beim Start.
+        function repairDuplicateVocabIds() {
+            const seen = new Set();
+            let repaired = false;
+            appData.vocabularies.forEach(item => {
+                if (seen.has(item.id)) {
+                    item.id = generateUniqueId();
+                    repaired = true;
+                } else {
+                    seen.add(item.id);
+                }
+            });
+            if (repaired) saveToLocalStorage();
+        }
 
         let currentActiveVerb = null;
         let currentQuizItem = null;
         let currentQuizTargetAnswer = "";
         let examMode = null; // null = normaler Modus, sonst {total, current, correct, timeLimitSec, timerInterval, startedAt}
         let editingFamilyIds = []; // Temp-State für Wortfamilien-Verknüpfung im Formular
+        let typeManuallySet = false; // Verhindert, dass Auto-Erkennung eine manuelle Wortart-Wahl überschreibt
+        let duplicateConfirmed = false; // true, sobald der Nutzer eine erkannte Dublette bestätigt hat
 
         document.addEventListener('DOMContentLoaded', () => {
+            repairDuplicateVocabIds();
             initUserAndLang();
             renderVocabList();
             initRealWorldMap();
@@ -1146,8 +1284,10 @@
             document.getElementById('settingsUser').textContent = appData.currentUser;
             document.getElementById('settingsUserGoal').textContent = appData.currentUser;
             document.getElementById('dailyGoalInput').value = getDailyGoal();
+            document.getElementById('lowercaseFirstLetterToggle').checked = !appData.settings || appData.settings.lowercaseFirstLetter !== false;
             updateHeroBanner();
             updateDailyGoalDisplay();
+            updateFormPlaceholders();
         }
 
         function switchUser() {
@@ -1160,6 +1300,7 @@
             renderVocabList();
             updateHeroBanner();
             updateDailyGoalDisplay();
+            updateFormPlaceholders();
         }
 
         function renderLanguageDropdown() {
@@ -1182,6 +1323,7 @@
             saveToLocalStorage();
             updateHeroBanner();
             renderVocabList();
+            updateFormPlaceholders();
         }
 
         function updateHeroBanner() {
@@ -1229,6 +1371,392 @@
             const type = document.getElementById('inputType').value;
             document.getElementById('conjSection').className = type === 'verb' ? '' : 'hidden';
             if (type === 'verb') autoGenerateConjugations();
+        }
+
+        // ---------- Wortart-Anzeige & automatische Erkennung ----------
+        const WORD_TYPE_LABELS = {
+            substantiv: 'Substantiv', verb: 'Verb', adjektiv: 'Adjektiv',
+            pronomen: 'Pronomen', adverb: 'Adverb', praeposition: 'Präposition',
+            formulierung: 'Redewendung', sonstige: 'Sonstige'
+        };
+        function wordTypeLabel(type) {
+            return WORD_TYPE_LABELS[type] || type;
+        }
+
+        // Bekannte Adjektiv-Endungen je Sprache (Heuristik, nicht 100% zuverlässig -
+        // dient als Vorschlag, der jederzeit manuell überschrieben werden kann).
+        const ADJECTIVE_ENDINGS = {
+            'Spanisch':      ['oso', 'osa', 'ivo', 'iva', 'able', 'ible'],
+            'Englisch':      ['able', 'ible', 'ful', 'ous', 'ive', 'al', 'ic'],
+            'Französisch':   ['eux', 'euse', 'if', 'ive', 'able'],
+            'Italienisch':   ['oso', 'osa', 'ivo', 'iva', 'abile', 'ibile'],
+            'Portugiesisch': ['oso', 'osa', 'ivo', 'iva', 'ável', 'ível'],
+            'Deutsch':       ['lich', 'ig', 'isch', 'bar']
+        };
+        // Artikel, an denen ein Substantiv erkennbar ist (Wort beginnt mit Artikel + Leerzeichen).
+        const ARTICLE_PATTERNS = {
+            'Spanisch':      ['el ', 'la ', 'los ', 'las ', 'un ', 'una '],
+            'Englisch':      ['the ', 'a ', 'an '],
+            'Französisch':   ['le ', 'la ', 'les ', 'un ', 'une ', "l'"],
+            'Italienisch':   ['il ', 'lo ', 'la ', 'i ', 'gli ', 'le ', 'un ', 'uno ', 'una '],
+            'Portugiesisch': ['o ', 'a ', 'os ', 'as ', 'um ', 'uma '],
+            'Deutsch':       ['der ', 'die ', 'das ', 'ein ', 'eine ']
+        };
+        // Verb-Endungen für die reguläre Erkennung (nutzt dieselben Muster wie die Auto-Konjugation).
+        const VERB_ENDINGS = {
+            'Spanisch': ['ar', 'er', 'ir'], 'Französisch': ['er', 'ir', 're'],
+            'Italienisch': ['are', 'ere', 'ire'], 'Portugiesisch': ['ar', 'er', 'ir'],
+            'Deutsch': ['en']
+        };
+
+        // Versucht die Wortart aus dem eingegebenen Wort zu erraten. Gibt null zurück,
+        // wenn keine sichere Erkennung möglich ist (dann bleibt die aktuelle Auswahl stehen).
+        function detectWordType(rawWord, lang) {
+            const trimmed = rawWord.trim();
+            const w = trimmed.toLowerCase();
+            if (!w) return null;
+
+            // Sonderfall "Artikel + Substantiv" (z.B. "la casa", "das Haus", "the house"):
+            // zwei Wörter, aber KEINE Formulierung, sondern eine einzelne Vokabel mit
+            // vorangestelltem Artikel. Muss vor der generellen Mehrwort-Prüfung greifen,
+            // sonst würde z.B. "la casa" fälschlich als Formulierung erkannt.
+            const articles = ARTICLE_PATTERNS[lang] || [];
+            const matchedArticle = articles.find(a => w.startsWith(a));
+            if (matchedArticle) {
+                const rest = w.slice(matchedArticle.length).trim();
+                if (rest && !rest.includes(' ')) return 'substantiv';
+            }
+
+            // Sonderfall englischer Infinitiv mit "to " (z.B. "to speak"): ebenfalls
+            // zwei Wörter, aber kein Formulierungs-Kandidat, sondern ein Verb.
+            if (lang === 'Englisch' && w.startsWith('to ')) {
+                const rest = w.slice(3).trim();
+                if (rest && !rest.includes(' ')) return 'verb';
+            }
+
+            if (w.includes(' ')) return null; // echte Mehrwort-Phrasen laufen über detectAndSuggestFormulation()
+
+            const pronounTokens = getPronouns(lang).flatMap(p => p.split(' / ').map(s => s.trim().toLowerCase()));
+            if (pronounTokens.includes(w)) return 'pronomen';
+
+            if (getIrregularVerb(lang, w.replace(/^to\s+/, ''))) return 'verb';
+            const verbEndings = VERB_ENDINGS[lang];
+            if (verbEndings && verbEndings.some(e => w.endsWith(e)) && w.length > Math.max(...verbEndings.map(e => e.length)) + 1) {
+                return 'verb';
+            }
+
+            const adjEndings = ADJECTIVE_ENDINGS[lang] || [];
+            if (adjEndings.some(suf => w.endsWith(suf) && w.length > suf.length + 1)) return 'adjektiv';
+
+            return null;
+        }
+
+        // ---------- Formulierungs-Erkennung & Verknüpfungs-Vorschlag ----------
+        // Erkennt Mehrwort-Formulierungen (z.B. "Guten Morgen") und schlägt vor, sie mit
+        // bereits vorhandenen Einzelvokabeln zu verknüpfen (nutzt denselben Wortfamilien-
+        // Mechanismus wie die manuelle Verknüpfung). Funktioniert sprachunabhängig, also
+        // für jede angelegte Sprache gleichermaßen.
+        function detectAndSuggestFormulation() {
+            const container = document.getElementById('formulationSuggestion');
+            const rawWord = document.getElementById('inputWord').value;
+            const tokens = rawWord.trim().split(/\s+/).filter(Boolean);
+
+            if (tokens.length < 2) {
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            if (!typeManuallySet) {
+                document.getElementById('inputType').value = 'formulierung';
+                toggleVerbFields();
+            }
+
+            const currentLang = appData.userLangs[appData.currentUser];
+            const editId = document.getElementById('editVocabId').value;
+            const cleanTokens = tokens.map(t => t.toLowerCase().replace(/[.,;:!?¿¡"'()]/g, '')).filter(Boolean);
+
+            const matches = appData.vocabularies.filter(v =>
+                v.user === appData.currentUser && v.lang === currentLang &&
+                String(v.id) !== String(editId) &&
+                !v.word.trim().includes(' ') &&
+                cleanTokens.includes(v.word.trim().toLowerCase()) &&
+                !editingFamilyIds.includes(v.id)
+            );
+
+            container.innerHTML = '';
+            if (matches.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            const title = document.createElement('div');
+            title.style.cssText = 'font-size:0.78rem; color:var(--text-muted); margin-top:8px; margin-bottom:6px;';
+            title.textContent = '💡 Redewendung erkannt - mit vorhandenen Vokabeln verknüpfen?';
+            container.appendChild(title);
+
+            matches.forEach(m => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-secondary family-search-result-btn';
+                btn.textContent = `+ "${m.word}" verknüpfen`;
+                btn.onclick = () => {
+                    editingFamilyIds.push(m.id);
+                    renderFamilyChips();
+                    detectAndSuggestFormulation();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Zählt, wie viele verknüpfte Wortfamilien-Einträge selbst Formulierungen (Mehrwort)
+        // sind - für die "📎 X Formulierungen"-Anzeige an der Einzelvokabel.
+        function countLinkedFormulations(item) {
+            return (item.relatedIds || [])
+                .map(rid => appData.vocabularies.find(v => v.id === rid))
+                .filter(r => r && r.word.trim().includes(' '))
+                .length;
+        }
+
+        // Zentraler Handler für Eingaben im Wortfeld: Kleinschreibung, Konjugation,
+        // Wortart-Erkennung, Konjugationsform- und Formulierungs-Erkennung laufen bei
+        // jeder Eingabe gemeinsam.
+        function onWordInputChanged() {
+            const wordInput = document.getElementById('inputWord');
+
+            // Ersten Buchstaben SOFORT beim Tippen klein schreiben (nicht erst beim
+            // Speichern) - verhindert, dass die automatische Großschreibung mancher
+            // mobiler Tastaturen (z.B. iOS) sichtbar bleibt. Cursor-Position wird
+            // erhalten, da das Setzen von .value ihn sonst ans Textende springen lässt.
+            const caseEnabled = !appData.settings || appData.settings.lowercaseFirstLetter !== false;
+            if (caseEnabled && wordInput.value.length > 0) {
+                const cursorPos = wordInput.selectionStart;
+                const transformed = wordInput.value.charAt(0).toLowerCase() + wordInput.value.slice(1);
+                if (transformed !== wordInput.value) {
+                    wordInput.value = transformed;
+                    if (wordInput.setSelectionRange && cursorPos !== null && cursorPos !== undefined) {
+                        wordInput.setSelectionRange(cursorPos, cursorPos);
+                    }
+                }
+            }
+
+            autoGenerateConjugations();
+
+            const lang = appData.userLangs[appData.currentUser];
+            const rawWord = wordInput.value;
+            const tokens = rawWord.trim().split(/\s+/).filter(Boolean);
+            const tokenCount = tokens.length;
+
+            if (tokenCount >= 2) {
+                // "Artikel + Substantiv" (z.B. "la casa") und englischer "to "-Infinitiv
+                // (z.B. "to speak") haben Vorrang vor der allgemeinen Formulierungs-
+                // Erkennung - beides sind Einzelvokabeln, keine Formulierungen.
+                const detected = detectWordType(rawWord, lang);
+                if (detected) {
+                    document.getElementById('formulationSuggestion').classList.add('hidden');
+                    document.getElementById('formulationSuggestion').innerHTML = '';
+                    hideConjugatedFormSuggestion();
+                    if (!typeManuallySet) {
+                        document.getElementById('inputType').value = detected;
+                        toggleVerbFields();
+                    }
+                } else {
+                    // "Pronomen + konjugierte Form" (z.B. "yo soy") hat Vorrang vor der
+                    // allgemeinen Formulierungs-Erkennung, da hier gezielt auf das
+                    // zugrundeliegende Verb hingewiesen werden kann.
+                    const conjMatch = tokenCount === 2 ? tryDetectConjugatedForm(tokens, lang) : null;
+                    if (conjMatch) {
+                        renderConjugatedFormSuggestion(conjMatch, tokens[1]);
+                        document.getElementById('formulationSuggestion').classList.add('hidden');
+                        document.getElementById('formulationSuggestion').innerHTML = '';
+                        if (!typeManuallySet) {
+                            document.getElementById('inputType').value = 'formulierung';
+                            toggleVerbFields();
+                        }
+                    } else {
+                        hideConjugatedFormSuggestion();
+                        detectAndSuggestFormulation();
+                    }
+                }
+            } else {
+                document.getElementById('formulationSuggestion').classList.add('hidden');
+                hideConjugatedFormSuggestion();
+                if (!typeManuallySet) {
+                    const detected = detectWordType(rawWord, lang);
+                    if (detected) {
+                        document.getElementById('inputType').value = detected;
+                        toggleVerbFields();
+                    }
+                }
+            }
+
+            checkForDuplicateWord();
+        }
+
+        // ---------- Erkennung konjugierter Verbformen (z.B. "yo soy" -> Verb "ser") ----------
+        // Sucht zuerst in den eigenen bereits gespeicherten Verben (inkl. manuell
+        // eingetragener Formen), dann in der Liste bekannter unregelmäßiger Verben.
+        function findVerbByConjugatedForm(formLower, lang) {
+            if (!formLower) return null;
+
+            const ownMatch = appData.vocabularies.find(v =>
+                v.user === appData.currentUser && v.lang === lang && v.type === 'verb' && v.conjugations &&
+                [...(v.conjugations.pres || []), ...(v.conjugations.past || []), v.conjugations.perf || '']
+                    .some(f => f && f.toLowerCase() === formLower)
+            );
+            if (ownMatch) {
+                return { infinitive: ownMatch.word, conjugations: ownMatch.conjugations, existingItem: ownMatch };
+            }
+
+            const irregulars = IRREGULAR_VERBS[lang] || {};
+            for (const infinitive in irregulars) {
+                const conj = irregulars[infinitive];
+                const allForms = [...(conj.pres || []), ...(conj.past || []), conj.perf || ''];
+                if (allForms.some(f => f && f.toLowerCase() === formLower)) {
+                    return { infinitive, conjugations: conj, existingItem: null };
+                }
+            }
+
+            return null;
+        }
+
+        // Prüft, ob die Eingabe dem Muster "Pronomen + Form" entspricht (z.B. "yo soy",
+        // "ich spreche") und liefert - falls erkennbar - das zugrundeliegende Verb.
+        function tryDetectConjugatedForm(tokens, lang) {
+            if (tokens.length !== 2) return null;
+            const pronounTokens = getPronouns(lang).flatMap(p => p.split(' / ').map(s => s.trim().toLowerCase()));
+            const firstClean = tokens[0].toLowerCase().replace(/[¿¡.,;:!?]/g, '');
+            if (!pronounTokens.includes(firstClean)) return null;
+
+            const formClean = tokens[1].toLowerCase().replace(/[.,;:!?]/g, '');
+            return findVerbByConjugatedForm(formClean, lang);
+        }
+
+        function hideConjugatedFormSuggestion() {
+            const container = document.getElementById('conjugatedFormSuggestion');
+            container.classList.add('hidden');
+            container.innerHTML = '';
+        }
+
+        // Zeigt den Hinweis "X ist eine Form von Y" mit passender Aktion an: entweder
+        // einen zusätzlichen, verknüpften Eintrag anlegen (Verb existiert schon) oder
+        // das Verb komplett neu mit allen Konjugationen anlegen (Verb fehlt noch).
+        function renderConjugatedFormSuggestion(match, formDisplay) {
+            const container = document.getElementById('conjugatedFormSuggestion');
+            container.innerHTML = '';
+            container.classList.remove('hidden');
+
+            const box = document.createElement('div');
+            box.className = 'duplicate-warning-box';
+
+            const msg = document.createElement('div');
+            msg.className = 'duplicate-warning-text';
+            msg.textContent = `💡 "${formDisplay}" ist eine konjugierte Form des Verbs "${match.infinitive}".`;
+            box.appendChild(msg);
+
+            if (match.existingItem) {
+                const linkBtn = document.createElement('button');
+                linkBtn.type = 'button';
+                linkBtn.className = 'btn btn-secondary family-search-result-btn';
+                linkBtn.textContent = `🔗 Zusätzlichen Eintrag anlegen, verknüpft mit "${match.infinitive}"`;
+                linkBtn.onclick = () => {
+                    if (!editingFamilyIds.includes(match.existingItem.id)) {
+                        editingFamilyIds.push(match.existingItem.id);
+                        renderFamilyChips();
+                    }
+                    hideConjugatedFormSuggestion();
+                };
+                box.appendChild(linkBtn);
+            } else {
+                const createBtn = document.createElement('button');
+                createBtn.type = 'button';
+                createBtn.className = 'btn btn-secondary family-search-result-btn';
+                createBtn.textContent = `➕ Neues Verb "${match.infinitive}" mit allen Konjugationen anlegen`;
+                createBtn.onclick = () => createVerbFromConjugationMatch(match);
+                box.appendChild(createBtn);
+            }
+
+            container.appendChild(box);
+        }
+
+        // Legt ein frisches Formular für das erkannte Verb an, mit allen bekannten
+        // Konjugationsformen vorausgefüllt (manueller Modus, damit nichts überschrieben wird).
+        function createVerbFromConjugationMatch(match) {
+            openAddModal();
+            document.getElementById('inputWord').value = match.infinitive;
+            document.getElementById('inputType').value = 'verb';
+            typeManuallySet = true;
+            toggleVerbFields();
+            document.getElementById('conjFillMode').value = 'manual';
+            fillConjugationFields(match.conjugations);
+            hideConjugatedFormSuggestion();
+            document.getElementById('inputTranslation').focus();
+        }
+
+        // ---------- Dubletten-Erkennung ----------
+        // Reine Suchfunktion ohne Seiteneffekte (setzt NICHT duplicateConfirmed zurück).
+        // Wird beim Speichern genutzt, um zu prüfen, ob noch eine unbestätigte Dublette
+        // vorliegt, ohne eine bereits erteilte Bestätigung zu verwerfen.
+        function findDuplicateWord() {
+            const rawWord = document.getElementById('inputWord').value.trim();
+            if (!rawWord) return null;
+
+            const normalizedWord = applyCaseSetting(rawWord).trim().toLowerCase();
+            const currentLang = appData.userLangs[appData.currentUser];
+            const editId = document.getElementById('editVocabId').value;
+
+            return appData.vocabularies.find(v =>
+                v.user === appData.currentUser && v.lang === currentLang &&
+                String(v.id) !== String(editId) &&
+                v.word.trim().toLowerCase() === normalizedWord
+            ) || null;
+        }
+
+        // Zeigt die Dubletten-Warnung an (oder blendet sie aus) und setzt dabei die
+        // Bestätigung zurück, da sich die Eingabe geändert hat und neu bestätigt
+        // werden muss. Wird bei jeder Eingabe im Wortfeld aufgerufen.
+        function checkForDuplicateWord() {
+            const container = document.getElementById('duplicateWarning');
+            const dup = findDuplicateWord();
+
+            container.innerHTML = '';
+            duplicateConfirmed = false;
+
+            if (!dup) {
+                container.classList.add('hidden');
+                return null;
+            }
+
+            container.classList.remove('hidden');
+
+            const box = document.createElement('div');
+            box.className = 'duplicate-warning-box';
+
+            const msg = document.createElement('div');
+            msg.className = 'duplicate-warning-text';
+            msg.textContent = `⚠️ Diese Vokabel gibt es bereits: "${dup.word}" (${dup.translation})`;
+            box.appendChild(msg);
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'btn btn-secondary family-search-result-btn';
+            editBtn.textContent = '✏️ Bestehenden Eintrag bearbeiten';
+            editBtn.onclick = () => editVocab(dup.id);
+            box.appendChild(editBtn);
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.type = 'button';
+            confirmBtn.className = 'btn btn-secondary family-search-result-btn';
+            confirmBtn.textContent = '➕ Trotzdem als neue Vokabel speichern';
+            confirmBtn.onclick = () => {
+                duplicateConfirmed = true;
+                container.classList.add('hidden');
+            };
+            box.appendChild(confirmBtn);
+
+            container.appendChild(box);
+            return dup;
         }
 
         // ---------- Unregelmäßige Verben (feste Nachschlagetabelle) ----------
@@ -1560,9 +2088,17 @@
             document.getElementById('editVocabId').value = '';
             document.getElementById('formTitle').textContent = 'Vokabel eintragen';
             editingFamilyIds = [];
+            typeManuallySet = false;
+            duplicateConfirmed = false;
             document.getElementById('familySearchResults').innerHTML = '';
+            document.getElementById('formulationSuggestion').classList.add('hidden');
+            document.getElementById('formulationSuggestion').innerHTML = '';
+            document.getElementById('duplicateWarning').classList.add('hidden');
+            document.getElementById('duplicateWarning').innerHTML = '';
+            hideConjugatedFormSuggestion();
             renderFamilyChips();
             toggleVerbFields();
+            updateFormPlaceholders();
             switchTab('add', document.querySelectorAll('.nav-item')[1]);
         }
 
@@ -1572,16 +2108,27 @@
             const currentLang = appData.userLangs[appData.currentUser];
             const type = document.getElementById('inputType').value;
 
+            // Dubletten-Prüfung: nur bei NEUEN Einträgen relevant (beim Bearbeiten ist
+            // es per Definition derselbe Eintrag). Speichern wird blockiert, bis der
+            // Nutzer entweder den vorhandenen Eintrag bearbeitet oder das Anlegen als
+            // neue Vokabel über den Bestätigen-Button ausdrücklich bestätigt hat.
+            // Nutzt die seiteneffektfreie findDuplicateWord(), damit eine bereits
+            // erteilte Bestätigung (duplicateConfirmed) hier nicht überschrieben wird.
+            if (!editId && findDuplicateWord() && !duplicateConfirmed) {
+                checkForDuplicateWord(); // Warnung sichtbar machen
+                return;
+            }
+
             // Vorherige Verknüpfungen merken, um beim Speichern die Gegenseite
             // (andere Vokabel) korrekt zu aktualisieren (bidirektionale Wortfamilie).
             const previousItem = editId ? appData.vocabularies.find(v => v.id == editId) : null;
             const previousRelatedIds = previousItem ? (previousItem.relatedIds || []) : [];
 
             const entryData = {
-                id: editId ? Number(editId) : Date.now(),
+                id: editId ? Number(editId) : generateUniqueId(),
                 user: appData.currentUser,
                 lang: currentLang,
-                word: document.getElementById('inputWord').value.trim(),
+                word: applyCaseSetting(document.getElementById('inputWord').value.trim()),
                 translation: document.getElementById('inputTranslation').value.trim(),
                 type: type,
                 example: document.getElementById('inputExample').value.trim(),
@@ -1619,6 +2166,7 @@
             saveToLocalStorage();
             document.getElementById('vocabForm').reset();
             editingFamilyIds = [];
+            duplicateConfirmed = false;
             switchTab('list', document.querySelectorAll('.nav-item')[0]);
         }
 
@@ -1635,12 +2183,23 @@
             document.getElementById('inputGrammar').value = item.grammar || '';
             document.getElementById('inputNote').value = item.note || '';
 
+            // Bereits klassifizierte Vokabeln gelten als "manuell gesetzt", damit die
+            // Auto-Erkennung beim Weiterbearbeiten die bestehende Wortart nicht überschreibt.
+            typeManuallySet = true;
+            duplicateConfirmed = false;
+            document.getElementById('formulationSuggestion').classList.add('hidden');
+            document.getElementById('formulationSuggestion').innerHTML = '';
+            document.getElementById('duplicateWarning').classList.add('hidden');
+            document.getElementById('duplicateWarning').innerHTML = '';
+            hideConjugatedFormSuggestion();
+
             editingFamilyIds = (item.relatedIds || []).slice();
             document.getElementById('familySearchInput').value = '';
             document.getElementById('familySearchResults').innerHTML = '';
             renderFamilyChips();
 
             toggleVerbFields();
+            updateFormPlaceholders();
 
             if (item.type === 'verb' && item.conjugations) {
                 document.getElementById('conjFillMode').value = 'manual';
@@ -1751,6 +2310,25 @@
             return incorrect > 0 && incorrect >= correct;
         }
 
+        // Sucht nicht nur im Wort und in der Übersetzung, sondern auch in allen
+        // gespeicherten Konjugationsformen - so findet z.B. die Suche nach "soy"
+        // auch das Verb "ser", weil "soy" eine seiner Präsensformen ist.
+        function matchesSearch(item, search) {
+            if (!search) return true;
+            if (item.word.toLowerCase().includes(search) || item.translation.toLowerCase().includes(search)) {
+                return true;
+            }
+            if (item.conjugations) {
+                const allForms = [
+                    ...(item.conjugations.pres || []),
+                    ...(item.conjugations.past || []),
+                    item.conjugations.perf || ''
+                ];
+                if (allForms.some(f => f && f.toLowerCase().includes(search))) return true;
+            }
+            return false;
+        }
+
         function renderVocabList() {
             const container = document.getElementById('vocabList');
             const search = document.getElementById('searchInput').value.toLowerCase();
@@ -1760,7 +2338,7 @@
             const filtered = appData.vocabularies.filter(v => 
                 v.user === appData.currentUser && 
                 v.lang === currentLang && 
-                (v.word.toLowerCase().includes(search) || v.translation.toLowerCase().includes(search))
+                matchesSearch(v, search)
             );
 
             if (filtered.length === 0) {
@@ -1774,6 +2352,7 @@
                     .map(rid => appData.vocabularies.find(v => v.id === rid))
                     .filter(Boolean)
                     .map(r => escapeHtml(r.word));
+                const formulationCount = countLinkedFormulations(item);
 
                 const div = document.createElement('div');
                 div.className = 'vocab-item';
@@ -1781,9 +2360,10 @@
                     <div style="flex: 1;">
                         <div class="vocab-word">
                             <span>${escapeHtml(item.word)}</span>
-                            <span class="badge">${escapeHtml(item.type)}</span>
+                            <span class="badge">${escapeHtml(wordTypeLabel(item.type))}</span>
                             <span class="box-badge">Box ${item.box || 1}</span>
                             ${isDifficultWord(item) ? `<span class="difficult-badge">⚠️ Schwierig</span>` : ''}
+                            ${formulationCount > 0 ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:#fbbf24;">📎 ${formulationCount} Redewendung${formulationCount > 1 ? 'en' : ''}</span>` : ''}
                             ${isDue ? `<span style="color:var(--accent-gold); font-size:0.75rem;">⏰ Fällig</span>` : ''}
                             <button class="audio-btn" onclick="speakText('${escapeJsAttr(item.word)}')">🔊</button>
                         </div>
@@ -2149,6 +2729,24 @@
             }
 
             updateDailyGoalDisplay();
+        }
+
+        // ---------- Groß-/Kleinschreibung beim Speichern (Voreinstellung, änderbar) ----------
+        function toggleLowercaseSetting() {
+            if (!appData.settings) appData.settings = {};
+            appData.settings.lowercaseFirstLetter = document.getElementById('lowercaseFirstLetterToggle').checked;
+            saveToLocalStorage();
+        }
+
+        // Schreibt den ersten Buchstaben klein, sofern die Einstellung aktiv ist
+        // (Standard: aktiv). Wird nur auf das Wortfeld angewendet, nicht auf die
+        // deutsche Übersetzung (die als Substantiv korrekt großgeschrieben bleiben soll).
+        function applyCaseSetting(word) {
+            const enabled = !appData.settings || appData.settings.lowercaseFirstLetter !== false;
+            if (enabled && word.length > 0) {
+                return word.charAt(0).toLowerCase() + word.slice(1);
+            }
+            return word;
         }
 
         // ---------- Tagesziel (additiv, pro Nutzer einstellbar) ----------
@@ -2674,7 +3272,7 @@
 
                     if (word && trans) {
                         appData.vocabularies.push({
-                            id: Date.now() + index,
+                            id: generateUniqueId(),
                             user: appData.currentUser,
                             lang: currentLang,
                             word: word,
