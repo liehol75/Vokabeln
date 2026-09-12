@@ -40,6 +40,31 @@
             --container-width: 850px;
         }
 
+        /* Helles Theme - Umschaltbar über den 🌙/☀️-Button im Header */
+        body.light-theme {
+            --bg-color: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --card-border: rgba(0, 0, 0, 0.08);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+        body.light-theme { background-image: radial-gradient(circle at 50% 0%, #e0e7ff 0%, #f1f5f9 70%); }
+        body.light-theme header { background: rgba(255, 255, 255, 0.6); }
+        body.light-theme .select-btn, body.light-theme .device-btn {
+            background: rgba(0, 0, 0, 0.05); border-color: rgba(0,0,0,0.1); color: var(--text-main);
+        }
+        body.light-theme .hero-banner { background: rgba(255, 255, 255, 0.5); }
+        body.light-theme .world-map-container { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
+        body.light-theme input, body.light-theme select, body.light-theme textarea {
+            background: rgba(0,0,0,0.04); color: var(--text-main); border-color: rgba(0,0,0,0.12);
+        }
+        body.light-theme .modal-card { background: #ffffff; border-top-color: rgba(0,0,0,0.08); }
+        body.light-theme nav.bottom-nav { background: rgba(255, 255, 255, 0.9); }
+        body.light-theme .btn-secondary { background: rgba(0,0,0,0.06); color: var(--text-main); }
+        body.light-theme .vocab-item { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+        body.light-theme .country-shape { fill: #e2e8f0; stroke: #cbd5e1; }
+        body.light-theme .duplicate-warning-box { background: rgba(245,158,11,0.08); }
+
         * {
             box-sizing: border-box;
             margin: 0; padding: 0;
@@ -413,6 +438,11 @@
             align-items: center;
             gap: 4px;
         }
+        .conj-german {
+            font-size: 0.75rem;
+            color: var(--accent-green);
+            margin-top: 1px;
+        }
 
         .quiz-card {
             min-height: 270px;
@@ -520,6 +550,20 @@
             box-shadow: 0 0 0 3px var(--accent-green), 0 10px 30px rgba(16, 185, 129, 0.35);
         }
 
+        /* Konfetti bei Box-6-Aufstieg ("gemeistert!") */
+        .confetti-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 5000; overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute; top: -20px; opacity: 0.9;
+            animation-name: confetti-fall; animation-timing-function: ease-in; animation-fill-mode: forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0.9; }
+            100% { transform: translateY(110vh) rotate(540deg); opacity: 0; }
+        }
+
         nav.bottom-nav {
             position: fixed;
             bottom: 0; left: 0; right: 0;
@@ -557,6 +601,7 @@
     <header>
         <div class="brand">LingoVault ⚡</div>
         <div class="header-controls">
+            <button class="device-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Theme wechseln">🌙</button>
             <button class="device-btn" id="deviceToggleBtn" onclick="toggleDeviceLayout()">📱 iPhone 17 Pro</button>
             <select id="userSelect" class="select-btn" onchange="switchUser()">
                 <option value="Holger">👤 Holger</option>
@@ -685,7 +730,75 @@
 
                         <label style="color: #a5b4fc; margin-top: 10px;">Perfekt (Partizip)</label>
                         <input type="text" id="c_perf" placeholder="z. B. hablado / spoken">
+
+                        <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="checkOnlineForVerb()">🌐 Konjugation online prüfen</button>
                     </div>
+
+                    <div id="nounSection" class="hidden">
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label>Substantiv-Modus</label>
+                            <select id="nounFillMode" onchange="autoGenerateNounForms()">
+                                <option value="auto">⚡ Automatisch ausfüllen (Auto-Fill)</option>
+                                <option value="manual">✍️ Selbst ausfüllen (Manuell)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Geschlecht</label>
+                            <select id="nounGender" onchange="typeManuallySet = true; updateNounDisplay();">
+                                <option value="">– unbekannt –</option>
+                                <option value="m">männlich</option>
+                                <option value="f">weiblich</option>
+                                <option value="n">sächlich (nur Deutsch)</option>
+                            </select>
+                        </div>
+
+                        <label style="color: #a5b4fc; margin-top: 10px;">Singular &amp; Plural (mit Artikel)</label>
+                        <div class="conj-form-grid-single">
+                            <div class="conj-form-row">
+                                <span class="conj-form-pronoun" id="nounArticleSgLabel">Sg.</span>
+                                <div id="nounSingularPreview" style="flex:1; padding:11px 12px; background:rgba(0,0,0,0.25); border-radius:var(--radius-md); font-size:0.95rem; color:var(--text-main);">–</div>
+                            </div>
+                            <div class="conj-form-row">
+                                <span class="conj-form-pronoun" id="nounArticlePlLabel">Pl.</span>
+                                <input type="text" id="nounPluralForm" placeholder="z. B. casas" oninput="onNounPluralEdited()">
+                            </div>
+                        </div>
+                        <p id="nounAutoUnreliableHint" class="hidden" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">
+                            ⚠️ Automatische Pluralbildung ist für diese Sprache unzuverlässig - bitte prüfen/anpassen.
+                        </p>
+
+                        <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="checkOnlineForNoun()">🌐 Geschlecht/Plural online prüfen</button>
+                    </div>
+
+                    <div id="adjSection" class="hidden">
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label>Steigerungs-Modus</label>
+                            <select id="adjFillMode" onchange="autoGenerateAdjectiveForms()">
+                                <option value="auto">⚡ Automatisch ausfüllen (Auto-Fill)</option>
+                                <option value="manual">✍️ Selbst ausfüllen (Manuell)</option>
+                            </select>
+                        </div>
+
+                        <label style="color: #a5b4fc; margin-top: 10px;">Steigerung (Komparativ &amp; Superlativ)</label>
+                        <div class="conj-form-grid-single">
+                            <div class="conj-form-row">
+                                <span class="conj-form-pronoun">Komp.</span>
+                                <input type="text" id="adjComparative" placeholder="z. B. besser" oninput="onAdjectiveFormEdited()">
+                            </div>
+                            <div class="conj-form-row">
+                                <span class="conj-form-pronoun">Sup.</span>
+                                <input type="text" id="adjSuperlative" placeholder="z. B. am besten" oninput="onAdjectiveFormEdited()">
+                            </div>
+                        </div>
+                        <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 6px;">
+                            Viele Sprachen bilden die Steigerung analytisch (z. B. "más rápido"/"plus rapide") - das ist normal, kein Fehler.
+                        </p>
+
+                        <button type="button" class="btn btn-secondary" style="margin-top: 12px;" onclick="checkOnlineForVerb()">🌐 Steigerung online prüfen</button>
+                    </div>
+
+                    <div id="onlineCheckResult" class="hidden" style="margin-bottom: 12px;"></div>
 
                     <div class="form-group" style="margin-top: 12px;">
                         <label>Beispielsatz (Optional)</label>
@@ -700,6 +813,14 @@
                     <div class="form-group">
                         <label>Eigene Notiz / Eselsbrücke (optional)</label>
                         <textarea id="inputNote" rows="2" placeholder="z. B. persönlicher Merksatz, Eselsbrücke..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Kollokationen (optional) - eine pro Zeile, Lücke in [eckigen Klammern]</label>
+                        <textarea id="inputCollocations" rows="2" placeholder="z. B. depender [de] algo&#10;pensar [en] algo"></textarea>
+                        <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                            Wird im Quiz-Modus "🔗 Kollokationen" abgefragt - die Klammer wird zur Lücke.
+                        </p>
                     </div>
 
                     <div class="form-group">
@@ -720,13 +841,15 @@
                 <div class="grid-2">
                     <div>
                         <label>Abfrage-Richtung</label>
-                        <select id="quizDirection" onchange="startQuiz()">
+                        <select id="quizDirection" onchange="onQuizDirectionChanged()">
                             <option value="foreign_de">Fremdsprache ➔ Deutsch</option>
                             <option value="de_foreign">Deutsch ➔ Fremdsprache</option>
+                            <option value="both">🔀 Beide Richtungen (zufällig)</option>
                             <option value="verb_conj">Verben: Konjugations-Quiz</option>
                             <option value="multiple_choice">🔘 Multiple Choice</option>
                             <option value="dictation">🎧 Diktat (Hörverstehen)</option>
                             <option value="cloze">✏️ Lückentext (Beispielsatz)</option>
+                            <option value="collocation">🔗 Kollokationen</option>
                         </select>
                     </div>
                     <div>
@@ -736,6 +859,24 @@
                             <option value="all">📚 Alle Vokabeln</option>
                             <option value="difficult">🎯 Schwierige Wörter</option>
                         </select>
+                    </div>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; text-transform: none; font-size: 0.85rem; cursor: pointer;">
+                        <input type="checkbox" id="includeConjugationsToggle" onchange="onIncludeConjugationsToggled()" style="width: auto;">
+                        🔤 Konjugationen in normale Abfrage einbeziehen
+                    </label>
+                    <div id="tenseSelectRow" class="hidden" style="display: flex; gap: 14px; margin-top: 8px; font-size: 0.78rem; color: var(--text-muted);">
+                        <label style="display:flex; align-items:center; gap:4px; text-transform:none; cursor:pointer;">
+                            <input type="checkbox" id="tensePresToggle" onchange="startQuiz()" checked style="width:auto;"> Präsens
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; text-transform:none; cursor:pointer;">
+                            <input type="checkbox" id="tensePastToggle" onchange="startQuiz()" style="width:auto;"> Präteritum
+                        </label>
+                        <label style="display:flex; align-items:center; gap:4px; text-transform:none; cursor:pointer;">
+                            <input type="checkbox" id="tensePerfToggle" onchange="startQuiz()" style="width:auto;"> Perfekt
+                        </label>
                     </div>
                 </div>
 
@@ -790,7 +931,9 @@
                     <div style="width: 100%; display: flex; gap: 8px;">
                         <input type="text" id="quizInput" placeholder="Deine Antwort..." autocomplete="off" onkeydown="if(event.key==='Enter') checkAnswer()">
                         <button class="btn btn-secondary" style="width: auto; padding: 0 15px;" id="quizAudioBtn" onclick="speakQuizWord()">🔊</button>
+                        <button class="btn btn-secondary" style="width: auto; padding: 0 15px;" id="pronunciationBtn" onclick="startPronunciationCheck()">🎙️</button>
                     </div>
+                    <div id="pronunciationResult" class="hidden" style="margin-top: 8px;"></div>
                     <button class="btn btn-primary" style="margin-top: 12px;" id="quizCheckBtn" onclick="checkAnswer()">Prüfen</button>
                 </div>
 
@@ -857,6 +1000,20 @@
                 <div class="activity-chart-legend">
                     <span><span class="legend-dot" style="background: rgba(99,102,241,0.4);"></span>Beantwortet</span>
                     <span><span class="legend-dot" style="background: #10b981;"></span>Richtig</span>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h2 style="margin-bottom: 15px; font-size: 1.05rem;">🗓️ Lern-Kalender (13 Wochen)</h2>
+                <div id="statsHeatmap" style="overflow-x: auto;"></div>
+                <div class="activity-chart-legend">
+                    <span>Wenig</span>
+                    <span class="legend-dot" style="background: rgba(255,255,255,0.06);"></span>
+                    <span class="legend-dot" style="background: #1e3a8a;"></span>
+                    <span class="legend-dot" style="background: #1d4ed8;"></span>
+                    <span class="legend-dot" style="background: #3b82f6;"></span>
+                    <span class="legend-dot" style="background: #10b981;"></span>
+                    <span>Viel</span>
                 </div>
             </div>
         </section>
@@ -961,7 +1118,7 @@
                 <button onclick="closeConjModal()" style="background:none; border:none; color: var(--text-main); font-size: 1.5rem; cursor:pointer;">✕</button>
             </div>
 
-            <div class="tense-tabs">
+            <div class="tense-tabs" id="tenseTabsRow">
                 <button class="tense-tab active" onclick="switchTense('pres', this)">Präsens</button>
                 <button class="tense-tab" onclick="switchTense('past', this)">Präteritum</button>
                 <button class="tense-tab" onclick="switchTense('perf', this)">Perfekt</button>
@@ -971,6 +1128,8 @@
             <div id="modalConjGrid"></div>
             <!-- Präteritum / Perfekt: einspaltige Liste -->
             <table class="conj-table hidden" id="modalConjTable"></table>
+            <!-- Substantive: Singular/Plural mit Artikel (statt Zeitform-Tabs) -->
+            <div id="modalNounGrid" class="hidden"></div>
         </div>
     </div>
 
@@ -1077,6 +1236,110 @@
         // Aktualisiert alle Platzhalter/Beschriftungen im Formular passend zur aktuell
         // gewählten Sprache - inkl. der Personalpronomen bei den Konjugationsfeldern,
         // die vorher fest auf Spanisch/Englisch eingestellt waren.
+        // ---------- Online-Prüfung für Konjugationen & Substantiv-Formen ----------
+        // Wichtige Design-Entscheidung: Diese App läuft rein clientseitig ohne eigenen
+        // Server. Ein zuverlässiges automatisches Auslesen von Konjugationstabellen aus
+        // Wiktionary/Wikipedia (unterschiedliches Format je Sprache, viele Sonderfälle)
+        // ist ohne Server-Backend nicht robust genug, um Werte BLIND zu übernehmen -
+        // ein falsch geparster Wert wäre für ein Lernwerkzeug schlimmer als keiner.
+        // Deshalb: (1) ein zuverlässiger Link zu einer anerkannten Konjugations-/
+        // Wörterbuchseite öffnet sich in einem neuen Tab, und (2) zusätzlich wird
+        // versucht, einen kurzen Wiktionary-Textauszug zum Abgleich anzuzeigen - beides
+        // zur manuellen Prüfung, nichts wird automatisch in die Felder geschrieben.
+        const CONJUGATOR_LANG_SLUGS = {
+            'Spanisch': 'spanish', 'Englisch': 'english', 'Französisch': 'french',
+            'Italienisch': 'italian', 'Portugiesisch': 'portuguese', 'Deutsch': 'german',
+            'Russisch': 'russian'
+        };
+        const WIKTIONARY_LANG_CODES = {
+            'Spanisch': 'es', 'Englisch': 'en', 'Französisch': 'fr', 'Italienisch': 'it',
+            'Portugiesisch': 'pt', 'Deutsch': 'de', 'Russisch': 'ru', 'Japanisch': 'ja', 'Chinesisch': 'zh'
+        };
+
+        function getConjugatorUrl(word, lang) {
+            const slug = CONJUGATOR_LANG_SLUGS[lang];
+            const cleanWord = word.trim().toLowerCase().replace(/^to\s+/, '');
+            if (slug) return `https://conjugator.reverso.net/conjugation-${slug}-verb-${encodeURIComponent(cleanWord)}.html`;
+            return `https://de.wiktionary.org/wiki/${encodeURIComponent(cleanWord)}`;
+        }
+
+        function getDictionaryUrl(word) {
+            return `https://de.wiktionary.org/wiki/${encodeURIComponent(word.trim())}`;
+        }
+
+        function checkOnlineForVerb() {
+            const word = document.getElementById('inputWord').value.trim();
+            if (!word) { alert('Bitte zuerst ein Wort eingeben.'); return; }
+            const lang = appData.userLangs[appData.currentUser];
+            const url = getConjugatorUrl(word, lang);
+            window.open(url, '_blank');
+            runOnlineCheck(word, lang, url);
+        }
+
+        function checkOnlineForNoun() {
+            const word = document.getElementById('inputWord').value.trim();
+            if (!word) { alert('Bitte zuerst ein Wort eingeben.'); return; }
+            const lang = appData.userLangs[appData.currentUser];
+            const url = getDictionaryUrl(word);
+            window.open(url, '_blank');
+            runOnlineCheck(word, lang, url);
+        }
+
+        async function runOnlineCheck(word, lang, referenceUrl) {
+            const resultBox = document.getElementById('onlineCheckResult');
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = '';
+
+            const loading = document.createElement('div');
+            loading.style.cssText = 'font-size:0.78rem; color:var(--text-muted);';
+            loading.textContent = '🌐 Lade Vorschau...';
+            resultBox.appendChild(loading);
+
+            try {
+                const wikiLang = WIKTIONARY_LANG_CODES[lang] || 'de';
+                const resp = await fetch(`https://${wikiLang}.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
+                if (!resp.ok) throw new Error('nicht gefunden');
+                const data = await resp.json();
+                const extract = (data.extract || '').slice(0, 300);
+
+                resultBox.innerHTML = '';
+                const box = document.createElement('div');
+                box.className = 'duplicate-warning-box';
+                box.style.cssText = 'background:rgba(99,102,241,0.12); border-color:rgba(99,102,241,0.35);';
+
+                const title = document.createElement('div');
+                title.style.cssText = 'font-size:0.78rem; color:var(--text-muted); margin-bottom:6px;';
+                title.textContent = '📖 Wiktionary-Auszug (bitte mit den eingetragenen Formen abgleichen - wird nicht automatisch übernommen):';
+                box.appendChild(title);
+
+                const text = document.createElement('div');
+                text.style.cssText = 'font-size:0.82rem; margin-bottom:8px;';
+                text.textContent = extract || '(kein Textauszug verfügbar, aber die Referenzseite wurde geöffnet)';
+                box.appendChild(text);
+
+                const noteBtn = document.createElement('button');
+                noteBtn.type = 'button';
+                noteBtn.className = 'btn btn-secondary family-search-result-btn';
+                noteBtn.textContent = '📝 Quelle in Notiz übernehmen';
+                noteBtn.onclick = () => {
+                    const noteField = document.getElementById('inputNote');
+                    noteField.value = (noteField.value ? noteField.value + '\n' : '') + `Quelle: ${referenceUrl}`;
+                };
+                box.appendChild(noteBtn);
+
+                resultBox.appendChild(box);
+            } catch (err) {
+                resultBox.innerHTML = '';
+                const box = document.createElement('div');
+                box.className = 'duplicate-warning-box';
+                const text = document.createElement('div');
+                text.style.cssText = 'font-size:0.78rem; color:var(--text-muted);';
+                text.textContent = 'Kein automatischer Textauszug verfügbar (offline oder Wort nicht gefunden). Die Referenzseite wurde in einem neuen Tab geöffnet - bitte dort manuell vergleichen.';
+                box.appendChild(text);
+                resultBox.appendChild(box);
+            }
+        }
+
         function updateFormPlaceholders() {
             const lang = appData.userLangs[appData.currentUser];
             const cfg = WORD_PLACEHOLDER_EXAMPLES[lang] || { word: 'Wort oder Phrase eingeben...', example: 'Beispielsatz mit dem Wort...' };
@@ -1127,13 +1390,31 @@
         // erhalten. Da Löschen/Bearbeiten über die ID arbeitet, führte das dazu, dass
         // beim Bearbeiten/Löschen EINES Eintrags versehentlich ALLE Einträge mit
         // derselben ID betroffen waren - das war die Ursache für den gemeldeten
-        // Datenverlust bei der zweiten Sprache. generateUniqueId() prüft aktiv gegen
-        // alle vorhandenen IDs und vergibt bei Kollision eine neue.
+        // Datenverlust bei der zweiten Sprache.
+        //
+        // Weiterer Bugfix: eine rein zufällige Zusatzkomponente (Timestamp + Zufall)
+        // konnte dazu führen, dass eine SPÄTER angelegte Vokabel eine KLEINERE ID bekam
+        // als eine kurz zuvor angelegte (beide in derselben Millisekunde) - das hätte
+        // die "neueste zuerst"-Sortierung der Liste verfälscht. Ein strikt hochzählender
+        // Zähler pro Millisekunde (statt Zufall) garantiert, dass IDs innerhalb einer
+        // Sitzung immer streng aufsteigend nach Erstellungsreihenfolge sind.
+        let lastIdTimestamp = 0;
+        let lastIdCounter = 0;
+
         function generateUniqueId() {
-            let id;
-            do {
-                id = Date.now() * 1000 + Math.floor(Math.random() * 1000);
-            } while (appData.vocabularies.some(v => v.id === id));
+            const now = Date.now();
+            if (now > lastIdTimestamp) {
+                lastIdTimestamp = now;
+                lastIdCounter = 0;
+            } else {
+                lastIdCounter++;
+            }
+            let id = lastIdTimestamp * 1000 + (lastIdCounter % 1000);
+            // Zusätzliches Sicherheitsnetz gegen (praktisch ausgeschlossene) Kollisionen.
+            while (appData.vocabularies.some(v => v.id === id)) {
+                lastIdCounter++;
+                id = lastIdTimestamp * 1000 + (lastIdCounter % 1000);
+            }
             return id;
         }
 
@@ -1168,6 +1449,7 @@
             renderVocabList();
             updateSearchClearButton();
             initRealWorldMap();
+            initSwipeGestures();
 
             const ro = new ResizeObserver(() => {
                 if (mapVisible && worldDataGeoJSON) {
@@ -1196,6 +1478,20 @@
         function escapeRegex(str) {
             if (!str) return '';
             return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // ---------- Kollokations-Training ----------
+        // Parst eine Zeile wie "depender [de] algo" - der Klammerinhalt wird zur Lücke,
+        // der Rest bleibt sichtbarer Kontext. Gibt null zurück, wenn keine Klammer
+        // enthalten ist (dann keine gültige Kollokations-Zeile).
+        function parseCollocationLine(line) {
+            const match = line.match(/\[([^\]]+)\]/);
+            if (!match) return null;
+            return { blanked: line.replace(/\[([^\]]+)\]/, '_____'), key: match[1].trim() };
+        }
+
+        function hasUsableCollocation(item) {
+            return (item.collocations || []).some(l => parseCollocationLine(l));
         }
 
         // Entfernt Akzente/diakritische Zeichen (é->e, ñ->n, ü->u, ç->c, ...) für
@@ -1305,14 +1601,33 @@
         function toggleDeviceLayout() {
             isTabletMode = !isTabletMode;
             const btn = document.getElementById('deviceToggleBtn');
-            if (isTabletMode) {
-                document.body.className = 'device-tablet';
-                btn.textContent = '📱 Tab A11+';
-            } else {
-                document.body.className = 'device-phone';
-                btn.textContent = '📱 iPhone 17 Pro';
-            }
+            // Bugfix: vorher wurde body.className komplett überschrieben, was eine
+            // gleichzeitig aktive Theme-Klasse (light-theme) gelöscht hätte.
+            document.body.classList.toggle('device-tablet', isTabletMode);
+            document.body.classList.toggle('device-phone', !isTabletMode);
+            btn.textContent = isTabletMode ? '📱 Tab A11+' : '📱 iPhone 17 Pro';
             setTimeout(initRealWorldMap, 300);
+        }
+
+        // ---------- Helles/Dunkles Theme ----------
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-theme');
+            document.getElementById('themeToggleBtn').textContent = isLight ? '☀️' : '🌙';
+            if (!appData.settings) appData.settings = {};
+            appData.settings.theme = isLight ? 'light' : 'dark';
+            saveToLocalStorage();
+            setTimeout(initRealWorldMap, 100); // Kartenfarben an neues Theme anpassen
+        }
+
+        function applyStoredTheme() {
+            const theme = appData.settings && appData.settings.theme;
+            if (theme === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('themeToggleBtn').textContent = '☀️';
+            } else {
+                document.body.classList.remove('light-theme');
+                document.getElementById('themeToggleBtn').textContent = '🌙';
+            }
         }
 
         function toggleWorldMap() {
@@ -1338,6 +1653,7 @@
             document.getElementById('dailyGoalInput').value = getDailyGoal();
             document.getElementById('lowercaseFirstLetterToggle').checked = !appData.settings || appData.settings.lowercaseFirstLetter !== false;
             document.getElementById('accentInsensitiveToggle').checked = !appData.settings || appData.settings.accentInsensitive !== false;
+            applyStoredTheme();
             updateHeroBanner();
             updateDailyGoalDisplay();
             updateFormPlaceholders();
@@ -1479,7 +1795,11 @@
         function toggleVerbFields() {
             const type = document.getElementById('inputType').value;
             document.getElementById('conjSection').className = type === 'verb' ? '' : 'hidden';
+            document.getElementById('nounSection').className = type === 'substantiv' ? '' : 'hidden';
+            document.getElementById('adjSection').className = type === 'adjektiv' ? '' : 'hidden';
             if (type === 'verb') autoGenerateConjugations();
+            if (type === 'substantiv') autoGenerateNounForms();
+            if (type === 'adjektiv') autoGenerateAdjectiveForms();
         }
 
         // ---------- Wortart-Anzeige & automatische Erkennung ----------
@@ -1490,6 +1810,23 @@
         };
         function wordTypeLabel(type) {
             return WORD_TYPE_LABELS[type] || type;
+        }
+
+        // Farbcodierung nach Wortart für die Vokabelliste - schnelleres visuelles
+        // Scannen (Verben blau, Substantive grün, Adjektive orange, ...).
+        const WORD_TYPE_COLORS = {
+            verb:          { bg: 'rgba(59,130,246,0.2)',  text: '#60a5fa' },
+            substantiv:    { bg: 'rgba(16,185,129,0.2)',  text: '#34d399' },
+            adjektiv:      { bg: 'rgba(249,115,22,0.2)',  text: '#fb923c' },
+            pronomen:      { bg: 'rgba(139,92,246,0.2)',  text: '#a78bfa' },
+            adverb:        { bg: 'rgba(20,184,166,0.2)',  text: '#2dd4bf' },
+            praeposition:  { bg: 'rgba(236,72,153,0.2)',  text: '#f472b6' },
+            formulierung:  { bg: 'rgba(245,158,11,0.2)',  text: '#fbbf24' },
+            sonstige:      { bg: 'rgba(148,163,184,0.2)', text: '#94a3b8' }
+        };
+        function wordTypeBadgeStyleAttr(type) {
+            const c = WORD_TYPE_COLORS[type] || WORD_TYPE_COLORS.sonstige;
+            return `background:${c.bg}; color:${c.text};`;
         }
 
         // Bekannte Adjektiv-Endungen je Sprache (Heuristik, nicht 100% zuverlässig -
@@ -1517,6 +1854,273 @@
             'Italienisch': ['are', 'ere', 'ire'], 'Portugiesisch': ['ar', 'er', 'ir'],
             'Deutsch': ['en']
         };
+
+        // ---------- Substantive: Geschlecht & Plural ----------
+        // Heuristiken zur Geschlechtserkennung (Wortendungen + kleine Ausnahmelisten der
+        // häufigsten Gegenbeispiele). Wie bei allen Auto-Erkennungen in diesem Tool: guter
+        // Vorschlag, aber keine 100%ige Garantie - manuell änderbar.
+        const NOUN_GENDER_RULES = {
+            'Spanisch': {
+                exceptionsM: ['día', 'mapa', 'problema', 'sistema', 'tema', 'programa', 'idioma', 'clima', 'planeta', 'poema', 'drama', 'fantasma', 'sofá'],
+                exceptionsF: ['mano', 'foto', 'moto', 'radio'],
+                endingF: ['ción', 'sión', 'dad', 'tad', 'tud', 'umbre', 'a'],
+                endingM: ['o']
+            },
+            'Italienisch': {
+                exceptionsM: ['problema', 'sistema', 'programma', 'tema', 'clima'],
+                exceptionsF: [],
+                endingF: ['zione', 'sione', 'tà', 'a'],
+                endingM: ['o']
+            },
+            'Portugiesisch': {
+                exceptionsM: ['dia', 'mapa', 'problema', 'sistema', 'tema', 'programa', 'clima'],
+                exceptionsF: [],
+                endingF: ['ção', 'são', 'dade', 'a'],
+                endingM: ['o']
+            },
+            'Französisch': {
+                exceptionsM: [], exceptionsF: [],
+                endingF: ['tion', 'sion', 'té', 'ette', 'elle', 'ure'],
+                endingM: ['age', 'ment', 'isme', 'eau']
+            },
+            'Deutsch': {
+                exceptionsM: [], exceptionsF: [], exceptionsN: [],
+                endingN: ['chen', 'lein', 'ment'],
+                endingF: ['ung', 'heit', 'keit', 'schaft', 'ion', 'tät', 'ik'],
+                endingM: ['er', 'ling', 'ismus']
+            }
+        };
+
+        // Artikel je Sprache/Geschlecht/Numerus - Grundlage für die Singular/Plural-
+        // Darstellung "analog wie bei Konjugationen".
+        const NOUN_ARTICLES = {
+            'Spanisch':      { m: { sg: 'el',  pl: 'los' }, f: { sg: 'la', pl: 'las' } },
+            'Italienisch':   { m: { sg: 'il',  pl: 'i'   }, f: { sg: 'la', pl: 'le'  } },
+            'Portugiesisch': { m: { sg: 'o',   pl: 'os'  }, f: { sg: 'a',  pl: 'as'  } },
+            'Französisch':   { m: { sg: 'le',  pl: 'les' }, f: { sg: 'la', pl: 'les' } },
+            'Deutsch':       { m: { sg: 'der', pl: 'die' }, f: { sg: 'die', pl: 'die' }, n: { sg: 'das', pl: 'die' } },
+            'Englisch':      { m: { sg: 'the', pl: 'the' } }
+        };
+
+        function getNounArticle(lang, gender, isPlural) {
+            const table = NOUN_ARTICLES[lang];
+            if (!table) return '';
+            const g = (gender && table[gender]) ? gender : (lang === 'Englisch' ? 'm' : null);
+            if (!g || !table[g]) return '';
+            return isPlural ? table[g].pl : table[g].sg;
+        }
+
+        // Errät das grammatikalische Geschlecht anhand von Wortendungen (mit kleinen
+        // Ausnahmelisten für die häufigsten Gegenbeispiele). Gibt '' zurück, wenn keine
+        // sichere Erkennung möglich ist.
+        function detectNounGender(word, lang) {
+            const w = word.trim().toLowerCase();
+            const rules = NOUN_GENDER_RULES[lang];
+            if (!rules || !w) return '';
+
+            if (rules.exceptionsM && rules.exceptionsM.includes(w)) return 'm';
+            if (rules.exceptionsF && rules.exceptionsF.includes(w)) return 'f';
+            if (rules.exceptionsN && rules.exceptionsN.includes(w)) return 'n';
+
+            if (rules.endingN) for (const e of rules.endingN) if (w.endsWith(e)) return 'n';
+            if (rules.endingF) for (const e of rules.endingF) if (w.endsWith(e)) return 'f';
+            if (rules.endingM) for (const e of rules.endingM) if (w.endsWith(e)) return 'm';
+            return '';
+        }
+
+        // Sprachen, für die die automatische Pluralbildung zuverlässig genug ist, um sie
+        // vorzuschlagen. Deutsch/Russisch/Japanisch/Chinesisch sind zu unregelmäßig bzw.
+        // folgen keinem einfachen Anhängungsmuster - dort bleibt das Feld manuell.
+        const PLURAL_AUTOFILL_LANGS = ['Spanisch', 'Italienisch', 'Portugiesisch', 'Französisch', 'Englisch'];
+
+        function generatePlural(word, lang) {
+            const w = word.trim();
+            if (!w) return '';
+            const lower = w.toLowerCase();
+
+            if (lang === 'Spanisch') {
+                if (/z$/.test(lower)) return w.slice(0, -1) + 'ces';
+                if (/[áéíóúaeiou]$/.test(lower)) return w + 's';
+                return w + 'es';
+            }
+            if (lang === 'Italienisch') {
+                if (/a$/.test(lower)) return w.slice(0, -1) + 'e';
+                if (/o$/.test(lower) || /e$/.test(lower)) return w.slice(0, -1) + 'i';
+                return w;
+            }
+            if (lang === 'Portugiesisch') {
+                if (/ão$/.test(lower)) return w.slice(0, -2) + 'ões';
+                if (/[aeiou]$/.test(lower)) return w + 's';
+                if (/r$|z$/.test(lower)) return w + 'es';
+                if (/m$/.test(lower)) return w.slice(0, -1) + 'ns';
+                return w + 's';
+            }
+            if (lang === 'Französisch') {
+                if (/(s|x|z)$/.test(lower)) return w;
+                if (/al$/.test(lower)) return w.slice(0, -2) + 'aux';
+                if (/(eau|eu)$/.test(lower)) return w + 'x';
+                return w + 's';
+            }
+            if (lang === 'Englisch') {
+                if (/(s|sh|ch|x|z)$/.test(lower)) return w + 'es';
+                if (/[^aeiou]y$/.test(lower)) return w.slice(0, -1) + 'ies';
+                if (/fe$/.test(lower)) return w.slice(0, -2) + 'ves';
+                if (/f$/.test(lower)) return w.slice(0, -1) + 'ves';
+                return w + 's';
+            }
+            return ''; // Deutsch u.a.: keine verlässliche Automatik, bleibt manuell
+        }
+
+        // ---------- Adjektiv-Steigerung (Komparativ & Superlativ) ----------
+        // Unregelmäßige Steigerungsformen der häufigsten Adjektive je Sprache.
+        const IRREGULAR_ADJECTIVES = {
+            'Deutsch': {
+                'gut': { comp: 'besser', sup: 'am besten' },
+                'viel': { comp: 'mehr', sup: 'am meisten' },
+                'gern': { comp: 'lieber', sup: 'am liebsten' },
+                'hoch': { comp: 'höher', sup: 'am höchsten' },
+                'nah': { comp: 'näher', sup: 'am nächsten' },
+                'groß': { comp: 'größer', sup: 'am größten' }
+            },
+            'Englisch': {
+                'good': { comp: 'better', sup: 'best' },
+                'bad': { comp: 'worse', sup: 'worst' },
+                'far': { comp: 'further', sup: 'furthest' },
+                'little': { comp: 'less', sup: 'least' },
+                'many': { comp: 'more', sup: 'most' },
+                'much': { comp: 'more', sup: 'most' }
+            },
+            'Spanisch': {
+                'bueno': { comp: 'mejor', sup: 'el mejor' },
+                'malo': { comp: 'peor', sup: 'el peor' },
+                'grande': { comp: 'mayor', sup: 'el mayor' },
+                'pequeño': { comp: 'menor', sup: 'el menor' }
+            },
+            'Italienisch': {
+                'buono': { comp: 'migliore', sup: 'il migliore' },
+                'cattivo': { comp: 'peggiore', sup: 'il peggiore' },
+                'grande': { comp: 'maggiore', sup: 'il maggiore' },
+                'piccolo': { comp: 'minore', sup: 'il minore' }
+            },
+            'Portugiesisch': {
+                'bom': { comp: 'melhor', sup: 'o melhor' },
+                'mau': { comp: 'pior', sup: 'o pior' },
+                'grande': { comp: 'maior', sup: 'o maior' },
+                'pequeno': { comp: 'menor', sup: 'o menor' }
+            },
+            'Französisch': {
+                'bon': { comp: 'meilleur', sup: 'le meilleur' },
+                'mauvais': { comp: 'pire', sup: 'le pire' }
+            }
+        };
+
+        // Erzeugt Komparativ/Superlativ. Deutsch/Englisch bilden (bei regelmäßigen
+        // Adjektiven) synthetische Formen (-er/-(e)st); die meisten romanischen
+        // Sprachen bilden analytisch (más/plus/più/mais + Adjektiv) - beides korrekt,
+        // kein Automatik-Fehler.
+        function generateAdjectiveComparison(word, lang) {
+            const w = word.trim();
+            if (!w) return null;
+            const lower = w.toLowerCase();
+
+            const irregular = IRREGULAR_ADJECTIVES[lang] && IRREGULAR_ADJECTIVES[lang][lower];
+            if (irregular) return irregular;
+
+            if (lang === 'Deutsch') {
+                const endsInDT = /[dt]$/.test(lower);
+                return { comp: w + (endsInDT ? 'er' : 'er'), sup: `am ${w}${endsInDT ? 'esten' : 'sten'}` };
+            }
+            if (lang === 'Englisch') {
+                if (/[^aeiou]y$/.test(lower)) return { comp: w.slice(0, -1) + 'ier', sup: w.slice(0, -1) + 'iest' };
+                if (lower.length <= 6) {
+                    if (/e$/.test(lower)) return { comp: w + 'r', sup: w + 'st' };
+                    return { comp: w + 'er', sup: w + 'est' };
+                }
+                return { comp: 'more ' + w, sup: 'most ' + w };
+            }
+            if (lang === 'Spanisch') return { comp: 'más ' + w, sup: 'el más ' + w };
+            if (lang === 'Italienisch') return { comp: 'più ' + w, sup: 'il più ' + w };
+            if (lang === 'Portugiesisch') return { comp: 'mais ' + w, sup: 'o mais ' + w };
+            if (lang === 'Französisch') return { comp: 'plus ' + w, sup: 'le plus ' + w };
+            return null; // Russisch/Japanisch/Chinesisch: keine verlässliche Automatik
+        }
+
+        function autoGenerateAdjectiveForms() {
+            const type = document.getElementById('inputType').value;
+            if (type !== 'adjektiv') return;
+
+            const fillMode = document.getElementById('adjFillMode').value;
+            if (fillMode !== 'auto') return;
+
+            const word = document.getElementById('inputWord').value.trim();
+            const lang = appData.userLangs[appData.currentUser];
+            if (!word) return;
+
+            const result = generateAdjectiveComparison(word, lang);
+            if (result) {
+                document.getElementById('adjComparative').value = result.comp;
+                document.getElementById('adjSuperlative').value = result.sup;
+            }
+        }
+
+        function onAdjectiveFormEdited() {
+            typeManuallySet = true;
+        }
+
+        // Füllt Geschlecht (falls Auto-Modus) und Plural-Vorschlag anhand des aktuell
+        // eingegebenen Worts - "automatische Anpassung bei Eingabe", analog zur
+        // Auto-Konjugation bei Verben.
+        function autoGenerateNounForms() {
+            const type = document.getElementById('inputType').value;
+            if (type !== 'substantiv') return;
+
+            const fillMode = document.getElementById('nounFillMode').value;
+            const word = document.getElementById('inputWord').value.trim();
+            const lang = appData.userLangs[appData.currentUser];
+
+            if (fillMode === 'auto' && word) {
+                const detectedGender = detectNounGender(word, lang);
+                if (detectedGender) document.getElementById('nounGender').value = detectedGender;
+
+                if (PLURAL_AUTOFILL_LANGS.includes(lang)) {
+                    const suggestedPlural = generatePlural(word, lang);
+                    if (suggestedPlural) document.getElementById('nounPluralForm').value = suggestedPlural;
+                }
+            }
+            updateNounDisplay();
+        }
+
+        function onNounPluralEdited() {
+            typeManuallySet = true;
+            updateNounDisplay();
+        }
+
+        // Aktualisiert die Artikel-Labels und die Singular-Vorschau (analog zur
+        // Pronomen-Anzeige bei Konjugationen).
+        function updateNounDisplay() {
+            const word = document.getElementById('inputWord').value.trim();
+            const lang = appData.userLangs[appData.currentUser];
+            const gender = document.getElementById('nounGender').value;
+
+            const artSg = getNounArticle(lang, gender, false);
+            const artPl = getNounArticle(lang, gender, true);
+
+            document.getElementById('nounArticleSgLabel').textContent = artSg || 'Sg.';
+            document.getElementById('nounArticlePlLabel').textContent = artPl || 'Pl.';
+            document.getElementById('nounSingularPreview').textContent = word ? (artSg ? `${artSg} ${word}` : word) : '–';
+
+            document.getElementById('nounAutoUnreliableHint').classList.toggle('hidden', PLURAL_AUTOFILL_LANGS.includes(lang));
+        }
+
+        // Baut die kompakte "el casa · los casas"-Zeile für die Vokabelliste.
+        function buildNounDisplayLine(item) {
+            const artSg = getNounArticle(item.lang, item.gender, false);
+            const artPl = getNounArticle(item.lang, item.gender, true);
+            const sg = artSg ? `${artSg} ${item.word}` : item.word;
+            if (!item.plural) return sg;
+            const pl = artPl ? `${artPl} ${item.plural}` : item.plural;
+            return `${sg} · ${pl}`;
+        }
 
         // Versucht die Wortart aus dem eingegebenen Wort zu erraten. Gibt null zurück,
         // wenn keine sichere Erkennung möglich ist (dann bleibt die aktuelle Auswahl stehen).
@@ -1651,6 +2255,8 @@
             }
 
             autoGenerateConjugations();
+            autoGenerateNounForms();
+            autoGenerateAdjectiveForms();
 
             const lang = appData.userLangs[appData.currentUser];
             const rawWord = wordInput.value;
@@ -1949,11 +2555,55 @@
                 'fazer':  { pres: ['faço','fazes','faz','fazemos','fazeis','fazem'], past: ['fiz','fez'], perf: 'feito' }
             },
             'Deutsch': {
-                'sein':    { pres: ['bin','bist','ist','sind','seid','sind'], past: ['war','war'], perf: 'gewesen' },
-                'haben':   { pres: ['habe','hast','hat','haben','habt','haben'], past: ['hatte','hatte'], perf: 'gehabt' },
-                'werden':  { pres: ['werde','wirst','wird','werden','werdet','werden'], past: ['wurde','wurde'], perf: 'geworden' },
-                'gehen':   { pres: ['gehe','gehst','geht','gehen','geht','gehen'], past: ['ging','ging'], perf: 'gegangen' },
-                'können':  { pres: ['kann','kannst','kann','können','könnt','können'], past: ['konnte','konnte'], perf: 'gekonnt' }
+                'sein':      { pres: ['bin','bist','ist','sind','seid','sind'], past: ['war','war'], perf: 'gewesen' },
+                'haben':     { pres: ['habe','hast','hat','haben','habt','haben'], past: ['hatte','hatte'], perf: 'gehabt' },
+                'werden':    { pres: ['werde','wirst','wird','werden','werdet','werden'], past: ['wurde','wurde'], perf: 'geworden' },
+                'gehen':     { pres: ['gehe','gehst','geht','gehen','geht','gehen'], past: ['ging','ging'], perf: 'gegangen' },
+                'können':    { pres: ['kann','kannst','kann','können','könnt','können'], past: ['konnte','konnte'], perf: 'gekonnt' },
+                // Erweiterung: häufigste starke/unregelmäßige deutsche Verben - Grundlage
+                // dafür, dass die deutsche Übersetzung einer fremdsprachigen Konjugation
+                // (z.B. "yo hablo" -> "ich spreche") korrekt gebildet werden kann.
+                'sprechen':  { pres: ['spreche','sprichst','spricht','sprechen','sprecht','sprechen'], past: ['sprach','sprach'], perf: 'gesprochen' },
+                'essen':     { pres: ['esse','isst','isst','essen','esst','essen'], past: ['aß','aß'], perf: 'gegessen' },
+                'geben':     { pres: ['gebe','gibst','gibt','geben','gebt','geben'], past: ['gab','gab'], perf: 'gegeben' },
+                'nehmen':    { pres: ['nehme','nimmst','nimmt','nehmen','nehmt','nehmen'], past: ['nahm','nahm'], perf: 'genommen' },
+                'sehen':     { pres: ['sehe','siehst','sieht','sehen','seht','sehen'], past: ['sah','sah'], perf: 'gesehen' },
+                'lesen':     { pres: ['lese','liest','liest','lesen','lest','lesen'], past: ['las','las'], perf: 'gelesen' },
+                'fahren':    { pres: ['fahre','fährst','fährt','fahren','fahrt','fahren'], past: ['fuhr','fuhr'], perf: 'gefahren' },
+                'laufen':    { pres: ['laufe','läufst','läuft','laufen','lauft','laufen'], past: ['lief','lief'], perf: 'gelaufen' },
+                'schlafen':  { pres: ['schlafe','schläfst','schläft','schlafen','schlaft','schlafen'], past: ['schlief','schlief'], perf: 'geschlafen' },
+                'tragen':    { pres: ['trage','trägst','trägt','tragen','tragt','tragen'], past: ['trug','trug'], perf: 'getragen' },
+                'helfen':    { pres: ['helfe','hilfst','hilft','helfen','helft','helfen'], past: ['half','half'], perf: 'geholfen' },
+                'treffen':   { pres: ['treffe','triffst','trifft','treffen','trefft','treffen'], past: ['traf','traf'], perf: 'getroffen' },
+                'werfen':    { pres: ['werfe','wirfst','wirft','werfen','werft','werfen'], past: ['warf','warf'], perf: 'geworfen' },
+                'waschen':   { pres: ['wasche','wäschst','wäscht','waschen','wascht','waschen'], past: ['wusch','wusch'], perf: 'gewaschen' },
+                'vergessen': { pres: ['vergesse','vergisst','vergisst','vergessen','vergesst','vergessen'], past: ['vergaß','vergaß'], perf: 'vergessen' },
+                'sterben':   { pres: ['sterbe','stirbst','stirbt','sterben','sterbt','sterben'], past: ['starb','starb'], perf: 'gestorben' },
+                'brechen':   { pres: ['breche','brichst','bricht','brechen','brecht','brechen'], past: ['brach','brach'], perf: 'gebrochen' },
+                'schließen': { pres: ['schließe','schließt','schließt','schließen','schließt','schließen'], past: ['schloss','schloss'], perf: 'geschlossen' },
+                'ziehen':    { pres: ['ziehe','ziehst','zieht','ziehen','zieht','ziehen'], past: ['zog','zog'], perf: 'gezogen' },
+                'fliegen':   { pres: ['fliege','fliegst','fliegt','fliegen','fliegt','fliegen'], past: ['flog','flog'], perf: 'geflogen' },
+                'verlieren': { pres: ['verliere','verlierst','verliert','verlieren','verliert','verlieren'], past: ['verlor','verlor'], perf: 'verloren' },
+                'singen':    { pres: ['singe','singst','singt','singen','singt','singen'], past: ['sang','sang'], perf: 'gesungen' },
+                'trinken':   { pres: ['trinke','trinkst','trinkt','trinken','trinkt','trinken'], past: ['trank','trank'], perf: 'getrunken' },
+                'finden':    { pres: ['finde','findest','findet','finden','findet','finden'], past: ['fand','fand'], perf: 'gefunden' },
+                'beginnen':  { pres: ['beginne','beginnst','beginnt','beginnen','beginnt','beginnen'], past: ['begann','begann'], perf: 'begonnen' },
+                'schwimmen': { pres: ['schwimme','schwimmst','schwimmt','schwimmen','schwimmt','schwimmen'], past: ['schwamm','schwamm'], perf: 'geschwommen' },
+                'kommen':    { pres: ['komme','kommst','kommt','kommen','kommt','kommen'], past: ['kam','kam'], perf: 'gekommen' },
+                'schreiben': { pres: ['schreibe','schreibst','schreibt','schreiben','schreibt','schreiben'], past: ['schrieb','schrieb'], perf: 'geschrieben' },
+                'fliehen':   { pres: ['fliehe','fliehst','flieht','fliehen','flieht','fliehen'], past: ['floh','floh'], perf: 'geflohen' },
+                'wissen':    { pres: ['weiß','weißt','weiß','wissen','wisst','wissen'], past: ['wusste','wusste'], perf: 'gewusst' },
+                'stehen':    { pres: ['stehe','stehst','steht','stehen','steht','stehen'], past: ['stand','stand'], perf: 'gestanden' },
+                'liegen':    { pres: ['liege','liegst','liegt','liegen','liegt','liegen'], past: ['lag','lag'], perf: 'gelegen' },
+                'schreien':  { pres: ['schreie','schreist','schreit','schreien','schreit','schreien'], past: ['schrie','schrie'], perf: 'geschrien' },
+                'denken':    { pres: ['denke','denkst','denkt','denken','denkt','denken'], past: ['dachte','dachte'], perf: 'gedacht' },
+                'bringen':   { pres: ['bringe','bringst','bringt','bringen','bringt','bringen'], past: ['brachte','brachte'], perf: 'gebracht' },
+                'kennen':    { pres: ['kenne','kennst','kennt','kennen','kennt','kennen'], past: ['kannte','kannte'], perf: 'gekannt' },
+                'müssen':    { pres: ['muss','musst','muss','müssen','müsst','müssen'], past: ['musste','musste'], perf: 'gemusst' },
+                'wollen':    { pres: ['will','willst','will','wollen','wollt','wollen'], past: ['wollte','wollte'], perf: 'gewollt' },
+                'dürfen':    { pres: ['darf','darfst','darf','dürfen','dürft','dürfen'], past: ['durfte','durfte'], perf: 'gedurft' },
+                'mögen':     { pres: ['mag','magst','mag','mögen','mögt','mögen'], past: ['mochte','mochte'], perf: 'gemocht' },
+                'tun':       { pres: ['tue','tust','tut','tun','tut','tun'], past: ['tat','tat'], perf: 'getan' }
             }
         };
 
@@ -1971,6 +2621,45 @@
             document.getElementById('c_past_1').value = data.past[0] || '';
             document.getElementById('c_past_3').value = data.past[1] || '';
             document.getElementById('c_perf').value = data.perf || '';
+        }
+
+        // ---------- Deutsche Konjugation der Übersetzung ----------
+        // Ermittelt die deutsche Konjugation zum übersetzten Verb (z.B. "sprechen"),
+        // damit zu jeder fremdsprachigen konjugierten Form (z.B. "yo hablo") die
+        // korrekte deutsche Entsprechung ("ich spreche") angezeigt werden kann.
+        function getGermanConjugation(germanTranslation) {
+            if (!germanTranslation) return null;
+            // Erstes Wort der Übersetzung nehmen (falls dort mehr steht, z.B. "sprechen, reden"
+            // oder "sprechen (mit jmd.)") und Infinitiv-Endung grob prüfen.
+            const firstWord = germanTranslation.trim().toLowerCase().split(/[\s,;(]/)[0];
+            if (!firstWord) return null;
+
+            const irregular = getIrregularVerb('Deutsch', firstWord);
+            if (irregular) return irregular;
+
+            return generateGermanRegular(firstWord);
+        }
+
+        // Baut "Pronomen Form" für eine deutsche Konjugation (z.B. "ich spreche").
+        function buildGermanFormText(germanConj, tense, index) {
+            if (!germanConj) return null;
+            const persons = getPronouns('Deutsch');
+
+            if (tense === 'pres' && germanConj.pres && germanConj.pres[index]) {
+                return `${persons[index]} ${germanConj.pres[index]}`;
+            }
+            if (tense === 'past') {
+                // past[0] = 1. Sg, past[1] = 3. Sg
+                const pastIdx = index === 0 ? 0 : 1;
+                const personIdx = index === 0 ? 0 : 2;
+                if (germanConj.past && germanConj.past[pastIdx]) {
+                    return `${persons[personIdx]} ${germanConj.past[pastIdx]}`;
+                }
+            }
+            if (tense === 'perf' && germanConj.perf) {
+                return germanConj.perf;
+            }
+            return null;
         }
 
         // ---------- Hilfsfunktionen für korrekte englische Verbformen ----------
@@ -2205,10 +2894,14 @@
             document.getElementById('duplicateWarning').classList.add('hidden');
             document.getElementById('duplicateWarning').innerHTML = '';
             hideConjugatedFormSuggestion();
+            document.getElementById('onlineCheckResult').classList.add('hidden');
+            document.getElementById('onlineCheckResult').innerHTML = '';
             renderFamilyChips();
             toggleVerbFields();
             updateFormPlaceholders();
             switchTab('add', document.querySelectorAll('.nav-item')[1]);
+            // Immer oben im Formular landen, unabhängig von der vorherigen Scroll-Position.
+            window.scrollTo({ top: 0, behavior: 'instant' });
         }
 
         function saveVocab(e) {
@@ -2254,6 +2947,11 @@
                 example: document.getElementById('inputExample').value.trim(),
                 grammar: document.getElementById('inputGrammar').value.trim(),
                 note: document.getElementById('inputNote').value.trim(),
+                gender: type === 'substantiv' ? document.getElementById('nounGender').value : '',
+                plural: type === 'substantiv' ? document.getElementById('nounPluralForm').value.trim() : '',
+                comparative: type === 'adjektiv' ? document.getElementById('adjComparative').value.trim() : '',
+                superlative: type === 'adjektiv' ? document.getElementById('adjSuperlative').value.trim() : '',
+                collocations: document.getElementById('inputCollocations').value.split('\n').map(l => l.trim()).filter(Boolean),
                 relatedIds: editingFamilyIds.slice(),
                 box: editId ? (appData.vocabularies.find(v => v.id == editId)?.box || 1) : 1,
                 nextReview: Date.now(),
@@ -2303,6 +3001,13 @@
             document.getElementById('inputExample').value = item.example || '';
             document.getElementById('inputGrammar').value = item.grammar || '';
             document.getElementById('inputNote').value = item.note || '';
+            document.getElementById('nounGender').value = item.gender || '';
+            document.getElementById('nounPluralForm').value = item.plural || '';
+            document.getElementById('nounFillMode').value = 'manual';
+            document.getElementById('adjComparative').value = item.comparative || '';
+            document.getElementById('adjSuperlative').value = item.superlative || '';
+            document.getElementById('inputCollocations').value = (item.collocations || []).join('\n');
+            document.getElementById('adjFillMode').value = 'manual';
 
             // Bereits klassifizierte Vokabeln gelten als "manuell gesetzt", damit die
             // Auto-Erkennung beim Weiterbearbeiten die bestehende Wortart nicht überschreibt.
@@ -2313,6 +3018,8 @@
             document.getElementById('duplicateWarning').classList.add('hidden');
             document.getElementById('duplicateWarning').innerHTML = '';
             hideConjugatedFormSuggestion();
+            document.getElementById('onlineCheckResult').classList.add('hidden');
+            document.getElementById('onlineCheckResult').innerHTML = '';
 
             editingFamilyIds = (item.relatedIds || []).slice();
             document.getElementById('familySearchInput').value = '';
@@ -2338,6 +3045,7 @@
             }
 
             switchTab('add', document.querySelectorAll('.nav-item')[1]);
+            window.scrollTo({ top: 0, behavior: 'instant' });
         }
 
         // ---------- Wortfamilien-Verknüpfung (additiv, bidirektional) ----------
@@ -2503,6 +3211,10 @@
                     .filter(Boolean)
                     .map(r => escapeHtml(r.word));
                 const formulationCount = countLinkedFormulations(item);
+                const nounLine = item.type === 'substantiv' ? buildNounDisplayLine(item) : '';
+                const adjLine = item.type === 'adjektiv' && (item.comparative || item.superlative)
+                    ? `${item.comparative ? 'Komp: ' + item.comparative : ''}${item.comparative && item.superlative ? ' · ' : ''}${item.superlative ? 'Sup: ' + item.superlative : ''}`
+                    : '';
 
                 const div = document.createElement('div');
                 div.className = 'vocab-item';
@@ -2510,7 +3222,7 @@
                     <div style="flex: 1;">
                         <div class="vocab-word">
                             <span>${escapeHtml(item.word)}</span>
-                            <span class="badge">${escapeHtml(wordTypeLabel(item.type))}</span>
+                            <span class="badge" style="${wordTypeBadgeStyleAttr(item.type)}">${escapeHtml(wordTypeLabel(item.type))}</span>
                             <span class="box-badge">Box ${item.box || 1}</span>
                             ${isDifficultWord(item) ? `<span class="difficult-badge">⚠️ Schwierig</span>` : ''}
                             ${formulationCount > 0 ? `<span class="badge" style="background:rgba(245,158,11,0.2); color:#fbbf24;">📎 ${formulationCount} Redewendung${formulationCount > 1 ? 'en' : ''}</span>` : ''}
@@ -2518,12 +3230,15 @@
                             <button class="audio-btn" onclick="speakText('${escapeJsAttr(item.word)}')">🔊</button>
                         </div>
                         <div class="vocab-trans">${escapeHtml(item.translation)}</div>
+                        ${nounLine ? `<div class="family-link-line">${escapeHtml(nounLine)}</div>` : ''}
+                        ${adjLine ? `<div class="family-link-line">${escapeHtml(adjLine)}</div>` : ''}
                         ${item.example ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">💬 "${escapeHtml(item.example)}"</div>` : ''}
                         ${item.note ? `<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">📝 ${escapeHtml(item.note)}</div>` : ''}
                         ${familyWords.length ? `<div class="family-link-line">🔗 Wortfamilie: ${familyWords.join(', ')}</div>` : ''}
                     </div>
                     <div style="display:flex; gap:4px; align-items:center;">
                         ${item.type === 'verb' ? `<button class="btn btn-secondary" style="padding:6px 10px; width:auto; font-size:0.8rem;" onclick="openConjModal(${item.id})">🔍</button>` : ''}
+                        ${item.type === 'substantiv' && (item.gender || item.plural) ? `<button class="btn btn-secondary" style="padding:6px 10px; width:auto; font-size:0.8rem;" onclick="openConjModal(${item.id})">🔍</button>` : ''}
                         <button class="btn btn-secondary" style="padding:6px 10px; width:auto; font-size:0.8rem;" onclick="editVocab(${item.id})">✏️</button>
                         <button onclick="deleteVocab(${item.id})" style="background:none; border:none; color: var(--accent-red); font-size:1.1rem; cursor:pointer; padding: 4px;">🗑️</button>
                     </div>
@@ -2549,9 +3264,37 @@
 
             document.getElementById('modalVerbTitle').textContent = currentActiveVerb.word;
             document.getElementById('modalVerbTrans').textContent = currentActiveVerb.translation;
-            
-            switchTense('pres', document.querySelectorAll('.tense-tab')[0]);
+
+            if (currentActiveVerb.type === 'substantiv') {
+                document.getElementById('tenseTabsRow').classList.add('hidden');
+                document.getElementById('modalConjGrid').classList.add('hidden');
+                document.getElementById('modalConjTable').classList.add('hidden');
+                renderNounModalGrid();
+            } else {
+                document.getElementById('tenseTabsRow').classList.remove('hidden');
+                document.getElementById('modalNounGrid').classList.add('hidden');
+                switchTense('pres', document.querySelectorAll('.tense-tab')[0]);
+            }
             document.getElementById('conjModal').classList.add('active');
+        }
+
+        // Zeigt Singular/Plural mit Artikel im Viewer-Modal - "analog wie bei
+        // Konjugationen" für Substantive.
+        function renderNounModalGrid() {
+            const container = document.getElementById('modalNounGrid');
+            container.classList.remove('hidden');
+
+            const item = currentActiveVerb;
+            const artSg = getNounArticle(item.lang, item.gender, false);
+            const artPl = getNounArticle(item.lang, item.gender, true);
+
+            let html = '<div class="conj-grid" style="grid-template-columns: 1fr;">';
+            html += buildConjGridRowHtml(artSg || 'Sg.', item.word, null);
+            if (item.plural) {
+                html += buildConjGridRowHtml(artPl || 'Pl.', item.plural, null);
+            }
+            html += '</div>';
+            container.innerHTML = html;
         }
 
         function closeConjModal() {
@@ -2562,25 +3305,35 @@
             if (e.target.id === 'conjModal') closeConjModal();
         }
 
-        // Baut eine einzelne Zeile im Singular/Plural-Grid (Pronomen + Form + Audio)
-        function buildConjGridRowHtml(pronoun, val) {
+        // Baut eine einzelne Zeile im Singular/Plural-Grid (Pronomen + Form + Audio),
+        // optional mit deutscher Übersetzung der konjugierten Form darunter.
+        function buildConjGridRowHtml(pronoun, val, germanText) {
             return `<div class="conj-row">
                         <span class="conj-pronoun">${escapeHtml(pronoun)}</span>
                         <span class="conj-form">${escapeHtml(val)} <button class="audio-btn" onclick="speakText('${escapeJsAttr(val)}')">🔊</button></span>
+                        ${germanText ? `<span class="conj-german">${escapeHtml(germanText)}</span>` : ''}
                     </div>`;
         }
 
         // Rendert die Präsens-Konjugation als zwei Spalten: Singular (1-3) und Plural (4-6),
-        // jeweils mit dem automatisch korrekten Personalpronomen der aktuellen Sprache davor.
-        function renderConjGrid(container, persons, presForms) {
+        // jeweils mit dem automatisch korrekten Personalpronomen der aktuellen Sprache davor
+        // sowie - falls die Übersetzung ein erkennbares deutsches Verb ist - der passenden
+        // deutschen Konjugation (z.B. "yo hablo" -> "ich spreche").
+        function renderConjGrid(container, persons, presForms, germanConj) {
             let singularHtml = '';
             [0, 1, 2].forEach(i => {
-                if (presForms[i]) singularHtml += buildConjGridRowHtml(persons[i], presForms[i]);
+                if (presForms[i]) {
+                    const german = germanConj ? buildGermanFormText(germanConj, 'pres', i) : null;
+                    singularHtml += buildConjGridRowHtml(persons[i], presForms[i], german);
+                }
             });
 
             let pluralHtml = '';
             [3, 4, 5].forEach(i => {
-                if (presForms[i]) pluralHtml += buildConjGridRowHtml(persons[i], presForms[i]);
+                if (presForms[i]) {
+                    const german = germanConj ? buildGermanFormText(germanConj, 'pres', i) : null;
+                    pluralHtml += buildConjGridRowHtml(persons[i], presForms[i], german);
+                }
             });
 
             if (!singularHtml && !pluralHtml) {
@@ -2613,12 +3366,13 @@
 
             const persons = getPronouns(appData.userLangs[appData.currentUser]);
             const conjs = currentActiveVerb ? currentActiveVerb.conjugations : null;
+            const germanConj = currentActiveVerb ? getGermanConjugation(currentActiveVerb.translation) : null;
 
             if (tense === 'pres') {
                 grid.classList.remove('hidden');
                 table.classList.add('hidden');
                 if (conjs && conjs.pres) {
-                    renderConjGrid(grid, persons, conjs.pres);
+                    renderConjGrid(grid, persons, conjs.pres, germanConj);
                 } else {
                     grid.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding: 10px 0;">Keine Formen eingetragen.</div>`;
                 }
@@ -2632,10 +3386,10 @@
             if (tense === 'past' && conjs && conjs.past) {
                 // Bugfix: vorher wurden für die einzige gespeicherte 1.-Person-Form fälschlich
                 // zwei Pronomen ("yo / tú") kombiniert angezeigt. Jetzt korrekt: 1. Sg. / 3. Sg.
-                if (conjs.past[0]) addConjRow(table, persons[0], conjs.past[0]);
-                if (conjs.past[1]) addConjRow(table, persons[2], conjs.past[1]);
+                if (conjs.past[0]) addConjRow(table, persons[0], conjs.past[0], germanConj ? buildGermanFormText(germanConj, 'past', 0) : null);
+                if (conjs.past[1]) addConjRow(table, persons[2], conjs.past[1], germanConj ? buildGermanFormText(germanConj, 'past', 1) : null);
             } else if (tense === 'perf' && conjs && conjs.perf) {
-                addConjRow(table, 'Partizip Perfekt', conjs.perf);
+                addConjRow(table, 'Partizip Perfekt', conjs.perf, germanConj ? buildGermanFormText(germanConj, 'perf', 0) : null);
             }
 
             if (table.innerHTML === '') {
@@ -2643,12 +3397,13 @@
             }
         }
 
-        function addConjRow(table, label, val) {
+        function addConjRow(table, label, val, germanText) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${escapeHtml(label)}</td>
                 <td style="font-weight:700; color:#a5b4fc;">
                     ${escapeHtml(val)} <button class="audio-btn" onclick="speakText('${escapeJsAttr(val)}')">🔊</button>
+                    ${germanText ? `<div class="conj-german">${escapeHtml(germanText)}</div>` : ''}
                 </td>
             `;
             table.appendChild(tr);
@@ -2666,12 +3421,128 @@
             }
         }
 
+        // ---------- Kartenstapel-Wischgesten ----------
+        // Nach Anzeige der Rückmeldung (richtig/falsch) kann statt Tippen auch gewischt
+        // werden - fühlt sich beim mobilen Lernen natürlicher an. Nach rechts wischen
+        // geht immer "vorwärts" (nächste Frage / Lösung ansehen), nach links wischen
+        // wählt bei zwei Optionen "Nochmal versuchen". Bei nur einer Option (richtig
+        // beantwortet, Multiple Choice, Prüfungssimulation) wirkt jede Richtung gleich.
+        function initSwipeGestures() {
+            const card = document.getElementById('quizCard');
+            if (!card) return;
+
+            let touchStartX = 0;
+            let touchStartY = 0;
+
+            card.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            card.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                const dx = touchEndX - touchStartX;
+                const dy = touchEndY - touchStartY;
+
+                // Nur eindeutig horizontale Wischgesten werten, damit normales
+                // vertikales Scrollen nicht versehentlich als Wisch gilt.
+                if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+
+                const feedback = document.getElementById('quizFeedback');
+                if (feedback.classList.contains('hidden')) return;
+
+                const buttons = document.querySelectorAll('#feedbackActions button');
+                if (buttons.length === 1) {
+                    buttons[0].click();
+                } else if (buttons.length === 2) {
+                    if (dx < 0) buttons[0].click(); else buttons[1].click();
+                }
+            }, { passive: true });
+        }
+
         function speakQuizWord() {
             if (currentQuizItem) {
                 const dir = document.getElementById('quizDirection').value;
                 const text = dir === 'de_foreign' ? currentQuizItem.translation : currentQuizItem.word;
                 speakText(text);
             }
+        }
+
+        // ---------- Aussprache-Übung (Web Speech API) ----------
+        // Nimmt die gesprochene Antwort über die Spracherkennung des Browsers auf und
+        // vergleicht sie (akzent-/satzzeichentolerant, wie bei der normalen Abfrage)
+        // mit dem erwarteten fremdsprachigen Wort. Nicht in jedem Browser verfügbar
+        // (v.a. iOS Safari nur eingeschränkt) - degradiert dann sauber mit Hinweis auf
+        // den bestehenden 🔊-Button als Alternative.
+        const SPEECH_LANG_CODES = {
+            'Spanisch': 'es-ES', 'Englisch': 'en-US', 'Französisch': 'fr-FR', 'Italienisch': 'it-IT',
+            'Portugiesisch': 'pt-PT', 'Deutsch': 'de-DE', 'Russisch': 'ru-RU', 'Japanisch': 'ja-JP', 'Chinesisch': 'zh-CN'
+        };
+
+        function startPronunciationCheck() {
+            const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const resultBox = document.getElementById('pronunciationResult');
+
+            if (!SpeechRecognitionAPI) {
+                resultBox.classList.remove('hidden');
+                resultBox.innerHTML = '';
+                const msg = document.createElement('div');
+                msg.style.cssText = 'font-size:0.78rem; color:var(--text-muted);';
+                msg.textContent = 'Spracherkennung wird von diesem Browser nicht unterstützt. Nutze den 🔊-Button, um die Referenzaussprache zu hören.';
+                resultBox.appendChild(msg);
+                return;
+            }
+            if (!currentQuizItem) return;
+
+            const lang = appData.userLangs[appData.currentUser];
+            const targetWord = currentQuizItem.word;
+
+            const recognition = new SpeechRecognitionAPI();
+            recognition.lang = SPEECH_LANG_CODES[lang] || 'en-US';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            resultBox.classList.remove('hidden');
+            resultBox.innerHTML = '';
+            const listening = document.createElement('div');
+            listening.style.cssText = 'font-size:0.78rem; color:var(--text-muted);';
+            listening.textContent = '🎙️ Höre zu... jetzt sprechen!';
+            resultBox.appendChild(listening);
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                const normTranscript = foldAccents(normalizeAnswerForCompare(transcript));
+                const normTarget = foldAccents(normalizeAnswerForCompare(targetWord));
+                const isClose = normTranscript === normTarget ||
+                    normTranscript.includes(normTarget) || normTarget.includes(normTranscript);
+
+                resultBox.innerHTML = '';
+                const box = document.createElement('div');
+                box.className = 'duplicate-warning-box';
+                if (isClose) box.style.cssText = 'background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.35);';
+
+                const text = document.createElement('div');
+                text.style.cssText = 'font-size:0.82rem;';
+                text.textContent = isClose
+                    ? `✅ Gut ausgesprochen! Erkannt: "${transcript}"`
+                    : `Erkannt: "${transcript}" - Ziel war: "${targetWord}". Nochmal versuchen?`;
+                box.appendChild(text);
+                resultBox.appendChild(box);
+            };
+
+            recognition.onerror = () => {
+                resultBox.innerHTML = '';
+                const box = document.createElement('div');
+                box.className = 'duplicate-warning-box';
+                const text = document.createElement('div');
+                text.style.cssText = 'font-size:0.78rem; color:var(--text-muted);';
+                text.textContent = 'Konnte nichts verstehen oder Mikrofonzugriff wurde nicht erlaubt.';
+                box.appendChild(text);
+                resultBox.appendChild(box);
+            };
+
+            recognition.start();
         }
 
         function startQuiz() {
@@ -2693,10 +3564,18 @@
             }
 
             if (dir === 'verb_conj') {
-                available = available.filter(v => v.type === 'verb' && v.conjugations?.pres?.length === 6);
+                // Akzeptiert Verben mit Formen in irgendeiner Zeitform (nicht mehr nur Präsens),
+                // damit die neu wählbaren Zeitformen (Präteritum/Perfekt) auch genug Fragen finden.
+                available = available.filter(v => v.type === 'verb' && v.conjugations && (
+                    (v.conjugations.pres && v.conjugations.pres.some(f => f)) ||
+                    (v.conjugations.past && v.conjugations.past.some(f => f)) ||
+                    v.conjugations.perf
+                ));
             } else if (dir === 'cloze') {
                 // Lückentext-Vollmodus: nur Vokabeln mit einem Beispielsatz, der das Wort enthält.
                 available = available.filter(v => v.example && new RegExp(escapeRegex(v.word), 'gi').test(v.example));
+            } else if (dir === 'collocation') {
+                available = available.filter(v => hasUsableCollocation(v));
             }
 
             const card = document.getElementById('quizCard');
@@ -2715,12 +3594,16 @@
             card.classList.remove('shake', 'correct-glow');
             document.getElementById('quizFeedback').classList.add('hidden');
             document.getElementById('quizHint').classList.add('hidden');
+            document.getElementById('pronunciationResult').classList.add('hidden');
+            document.getElementById('pronunciationResult').innerHTML = '';
             quizInput.value = '';
 
             if (available.length === 0) {
                 let msg = "Trage erst passende Vokabeln ein!";
                 if (dir === 'cloze') {
                     msg = "Keine Vokabeln mit passendem Beispielsatz gefunden. Trage bei ein paar Wörtern einen Beispielsatz ein, der das Wort enthält.";
+                } else if (dir === 'collocation') {
+                    msg = "Keine Vokabeln mit Kollokationen gefunden. Trage bei ein paar Wörtern Kollokationen mit [Lücke] ein.";
                 } else if (filter === 'difficult') {
                     msg = "Keine schwierigen Wörter erkannt - weiter so! 🎉";
                 } else if (filter === 'due') {
@@ -2754,14 +3637,37 @@
 
             let skipHint = false;
 
-            if (dir === 'foreign_de') {
-                quizPromptEl.textContent = currentQuizItem.word;
-                document.getElementById('quizSubprompt').textContent = "Wie lautet die deutsche Übersetzung?";
-                currentQuizTargetAnswer = currentQuizItem.translation;
-            } else if (dir === 'de_foreign') {
-                quizPromptEl.textContent = currentQuizItem.translation;
-                document.getElementById('quizSubprompt').textContent = `Übersetze ins ${currentLang}:`;
-                currentQuizTargetAnswer = currentQuizItem.word;
+            // "Beide Richtungen (zufällig)": pro Frage neu zwischen den beiden
+            // Standardrichtungen auswürfeln.
+            const effectiveDir = dir === 'both' ? (Math.random() < 0.5 ? 'foreign_de' : 'de_foreign') : dir;
+
+            if (effectiveDir === 'foreign_de' || effectiveDir === 'de_foreign') {
+                // "Konjugationen einbeziehen": bei Verben mit hinterlegten Formen wird
+                // mit einer gewissen Wahrscheinlichkeit statt der Grundform eine
+                // konjugierte Form abgefragt (statt der reinen Übersetzungsfrage).
+                const includeConj = document.getElementById('includeConjugationsToggle').checked;
+                const hasUsableConj = currentQuizItem.type === 'verb' && currentQuizItem.conjugations && (
+                    (currentQuizItem.conjugations.pres && currentQuizItem.conjugations.pres.some(f => f)) ||
+                    (currentQuizItem.conjugations.past && currentQuizItem.conjugations.past.some(f => f)) ||
+                    currentQuizItem.conjugations.perf
+                );
+                const conjQuestion = (includeConj && hasUsableConj && Math.random() < 0.4)
+                    ? buildConjugationQuestion(currentQuizItem, currentLang)
+                    : null;
+
+                if (conjQuestion) {
+                    quizPromptEl.textContent = conjQuestion.promptText;
+                    document.getElementById('quizSubprompt').textContent = conjQuestion.subpromptText;
+                    currentQuizTargetAnswer = conjQuestion.targetAnswer;
+                } else if (effectiveDir === 'foreign_de') {
+                    quizPromptEl.textContent = currentQuizItem.word;
+                    document.getElementById('quizSubprompt').textContent = "Wie lautet die deutsche Übersetzung?";
+                    currentQuizTargetAnswer = currentQuizItem.translation;
+                } else {
+                    quizPromptEl.textContent = currentQuizItem.translation;
+                    document.getElementById('quizSubprompt').textContent = `Übersetze ins ${currentLang}:`;
+                    currentQuizTargetAnswer = currentQuizItem.word;
+                }
             } else if (dir === 'multiple_choice') {
                 quizPromptEl.textContent = currentQuizItem.word;
                 document.getElementById('quizSubprompt').textContent = "Wähle die richtige deutsche Übersetzung:";
@@ -2779,18 +3685,27 @@
                 document.getElementById('quizSubprompt').textContent = "Welches Wort fehlt in der Lücke?";
                 currentQuizTargetAnswer = currentQuizItem.word;
                 skipHint = true; // Hinweis wäre hier redundant, da der Lückensatz bereits der Prompt ist
+            } else if (dir === 'collocation') {
+                const usableLines = currentQuizItem.collocations.map(parseCollocationLine).filter(Boolean);
+                const chosen = usableLines[Math.floor(Math.random() * usableLines.length)];
+                quizPromptEl.textContent = chosen.blanked;
+                document.getElementById('quizSubprompt').textContent = `Welches Wort/welche Präposition gehört zu "${currentQuizItem.word}"?`;
+                currentQuizTargetAnswer = chosen.key;
+                skipHint = true;
             } else if (dir === 'verb_conj') {
-                // Bugfix: Pronomen wurden bisher immer fest auf Spanisch angezeigt,
-                // auch wenn die aktive Sprache z.B. Englisch oder Französisch war.
-                const basePersons = getPronouns(currentLang);
-                const shortLabels = ['1. Sg', '2. Sg', '3. Sg', '1. Pl', '2. Pl', '3. Pl'];
-                const persons = basePersons.map((p, i) => `${p} (${shortLabels[i]})`);
-                const pIndex = Math.floor(Math.random() * 6);
-                const pLabel = persons[pIndex];
-                
-                quizPromptEl.textContent = `${currentQuizItem.word} (${pLabel})`;
-                document.getElementById('quizSubprompt').textContent = "Konjugationsform Präsens:";
-                currentQuizTargetAnswer = (currentQuizItem.conjugations?.pres?.[pIndex]) ? currentQuizItem.conjugations.pres[pIndex] : currentQuizItem.word;
+                // Nutzt jetzt dieselbe Logik wie "Konjugationen einbeziehen" - respektiert
+                // also die gewählten Zeitformen (Präsens/Präteritum/Perfekt) und zeigt bei
+                // erkennbarem deutschen Verb die passende deutsche Übersetzung als Hinweis.
+                const q = buildConjugationQuestion(currentQuizItem, currentLang);
+                if (q) {
+                    quizPromptEl.textContent = q.promptText;
+                    document.getElementById('quizSubprompt').textContent = q.subpromptText;
+                    currentQuizTargetAnswer = q.targetAnswer;
+                } else {
+                    quizPromptEl.textContent = currentQuizItem.word;
+                    document.getElementById('quizSubprompt').textContent = "Konjugationsform:";
+                    currentQuizTargetAnswer = currentQuizItem.word;
+                }
             }
 
             if (!skipHint && currentQuizItem.example) {
@@ -2803,6 +3718,87 @@
             } else {
                 document.getElementById('hintBtn').classList.add('hidden');
             }
+        }
+
+        // Liest die aktivierten Zeitformen-Checkboxen aus (Präsens/Präteritum/Perfekt).
+        // Fällt auf Präsens zurück, falls aus Versehen nichts angehakt ist.
+        function getEnabledTenses() {
+            const tenses = [];
+            if (document.getElementById('tensePresToggle').checked) tenses.push('pres');
+            if (document.getElementById('tensePastToggle').checked) tenses.push('past');
+            if (document.getElementById('tensePerfToggle').checked) tenses.push('perf');
+            return tenses.length ? tenses : ['pres'];
+        }
+
+        function onIncludeConjugationsToggled() {
+            updateTenseRowVisibility();
+            startQuiz();
+        }
+
+        function onQuizDirectionChanged() {
+            updateTenseRowVisibility();
+            startQuiz();
+        }
+
+        function updateTenseRowVisibility() {
+            const dir = document.getElementById('quizDirection').value;
+            const includeConj = document.getElementById('includeConjugationsToggle').checked;
+            document.getElementById('tenseSelectRow').classList.toggle('hidden', !(dir === 'verb_conj' || includeConj));
+        }
+
+        // Baut eine Konjugationsfrage für ein Verb: wählt zufällig eine der aktivierten
+        // Zeitformen und - bei Präsens/Präteritum - eine zufällige Person mit vorhandener
+        // Form. Zeigt zusätzlich die deutsche Entsprechung als Hinweis, sofern die
+        // Übersetzung ein erkennbares deutsches Verb ist (z.B. "yo hablo" -> "ich spreche").
+        function buildConjugationQuestion(item, lang) {
+            const persons = getPronouns(lang);
+            const germanConj = getGermanConjugation(item.translation);
+            const shortLabels = ['1. Sg', '2. Sg', '3. Sg', '1. Pl', '2. Pl', '3. Pl'];
+            const availableTenses = getEnabledTenses().filter(t => {
+                if (t === 'pres') return item.conjugations?.pres?.some(f => f);
+                if (t === 'past') return item.conjugations?.past?.some(f => f);
+                if (t === 'perf') return !!item.conjugations?.perf;
+                return false;
+            });
+            // Falls die gewählten Zeitformen keine Daten haben, auf alles Vorhandene zurückfallen.
+            const tensePool = availableTenses.length ? availableTenses
+                : ['pres', 'past', 'perf'].filter(t => {
+                    if (t === 'pres') return item.conjugations?.pres?.some(f => f);
+                    if (t === 'past') return item.conjugations?.past?.some(f => f);
+                    return !!item.conjugations?.perf;
+                });
+            if (tensePool.length === 0) return null;
+
+            const tense = tensePool[Math.floor(Math.random() * tensePool.length)];
+
+            if (tense === 'pres') {
+                const validIdx = [0, 1, 2, 3, 4, 5].filter(i => item.conjugations.pres[i]);
+                const pIndex = validIdx[Math.floor(Math.random() * validIdx.length)];
+                const germanHint = germanConj ? buildGermanFormText(germanConj, 'pres', pIndex) : null;
+                return {
+                    promptText: `${item.word} (${persons[pIndex]} · ${shortLabels[pIndex]})`,
+                    subpromptText: `Konjugationsform Präsens:${germanHint ? ' (' + germanHint + ')' : ''}`,
+                    targetAnswer: item.conjugations.pres[pIndex]
+                };
+            }
+            if (tense === 'past') {
+                const validIdx = [0, 1].filter(i => item.conjugations.past[i]);
+                const idx = validIdx[Math.floor(Math.random() * validIdx.length)];
+                const personIdx = idx === 0 ? 0 : 2;
+                const germanHint = germanConj ? buildGermanFormText(germanConj, 'past', idx) : null;
+                return {
+                    promptText: `${item.word} (${persons[personIdx]} · ${idx === 0 ? '1. Sg' : '3. Sg'})`,
+                    subpromptText: `Konjugationsform Präteritum:${germanHint ? ' (' + germanHint + ')' : ''}`,
+                    targetAnswer: item.conjugations.past[idx]
+                };
+            }
+            // perf
+            const germanHint = germanConj ? buildGermanFormText(germanConj, 'perf', 0) : null;
+            return {
+                promptText: `${item.word} (Partizip Perfekt)`,
+                subpromptText: `Perfekt-Form:${germanHint ? ' (' + germanHint + ')' : ''}`,
+                targetAnswer: item.conjugations.perf
+            };
         }
 
         // Baut die 4 Multiple-Choice-Optionen (1 korrekt + bis zu 3 Distraktoren aus
@@ -2865,6 +3861,27 @@
         }
 
         // Speichert Antwort-Statistik pro Tag (additiv, für den Aktivitäts-Verlauf in den Stats).
+        // Kleine CSS-basierte Konfetti-Animation als Belohnung, wenn eine Vokabel
+        // zum ersten Mal Box 6 (langfristig gemerkt) erreicht.
+        function triggerConfetti() {
+            const container = document.createElement('div');
+            container.className = 'confetti-container';
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#a5b4fc', '#34d399'];
+            for (let i = 0; i < 40; i++) {
+                const piece = document.createElement('div');
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const left = Math.random() * 100;
+                const delay = Math.random() * 0.3;
+                const duration = 1.6 + Math.random() * 0.8;
+                const size = 6 + Math.random() * 6;
+                piece.className = 'confetti-piece';
+                piece.style.cssText = `left:${left}%; width:${size}px; height:${size}px; background:${color}; border-radius:${Math.random() > 0.5 ? '50%' : '2px'}; animation-duration:${duration}s; animation-delay:${delay}s;`;
+                container.appendChild(piece);
+            }
+            document.body.appendChild(container);
+            setTimeout(() => container.remove(), 2800);
+        }
+
         function recordDailyStat(isCorrect) {
             if (!appData.stats.dailyHistory) appData.stats.dailyHistory = {};
             const today = new Date().toISOString().slice(0, 10);
@@ -3044,8 +4061,15 @@
                 resTitle.textContent = "Richtig! 🎉";
                 resTitle.style.color = "var(--accent-green)";
                 
-                const nextBox = Math.min((currentQuizItem.box || 1) + 1, 6);
+                const previousBox = currentQuizItem.box || 1;
+                const nextBox = Math.min(previousBox + 1, 6);
                 currentQuizItem.box = nextBox;
+
+                // Kleine Belohnung beim ersten Erreichen von Box 6 (langfristig gemerkt).
+                if (nextBox === 6 && previousBox !== 6) {
+                    triggerConfetti();
+                    resTitle.textContent = "Gemeistert! 🎉🏆";
+                }
                 
                 const daysToAdd = BOX_INTERVALS[nextBox];
                 currentQuizItem.nextReview = Date.now() + (daysToAdd * 24 * 60 * 60 * 1000);
@@ -3322,6 +4346,7 @@
             }
 
             renderActivityChart();
+            renderActivityHeatmap();
             renderDailyGoalRing();
         }
 
@@ -3385,6 +4410,67 @@
                 .attr('font-size', '9px')
                 .attr('fill', '#94a3b8')
                 .text((d, i) => i % 2 === 0 ? d.label : '');
+        }
+
+        // Lern-Kalender im Stil der GitHub-Contribution-Graph: 13 Wochen zurück,
+        // 7 Zeilen (Wochentage) x N Spalten (Wochen), Farbintensität nach Lernmenge
+        // des Tages. Nutzt dieselben dailyHistory-Daten wie der 14-Tage-Verlauf.
+        function renderActivityHeatmap() {
+            const container = document.getElementById('statsHeatmap');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const history = (appData.stats && appData.stats.dailyHistory) ? appData.stats.dailyHistory : {};
+            const totalDays = 91; // 13 Wochen
+            const today = new Date();
+            const days = [];
+            for (let i = totalDays - 1; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(today.getDate() - i);
+                const key = d.toISOString().slice(0, 10);
+                const entry = history[key] || { answered: 0 };
+                days.push({ date: key, weekday: d.getDay(), answered: entry.answered });
+            }
+
+            // In Wochen-Spalten gruppieren (Woche endet Samstag = weekday 6)
+            const weeks = [];
+            let currentWeek = [];
+            days.forEach((d, i) => {
+                currentWeek.push(d);
+                if (d.weekday === 6 || i === days.length - 1) {
+                    weeks.push(currentWeek);
+                    currentWeek = [];
+                }
+            });
+
+            const cellSize = 11, gap = 3;
+            const width = weeks.length * (cellSize + gap);
+            const height = 7 * (cellSize + gap);
+
+            function colorForCount(count) {
+                if (count === 0) return 'rgba(255,255,255,0.06)';
+                if (count < 5) return '#1e3a8a';
+                if (count < 10) return '#1d4ed8';
+                if (count < 20) return '#3b82f6';
+                return '#10b981';
+            }
+
+            const svg = d3.select(container).append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('viewBox', `0 0 ${width} ${height}`);
+
+            weeks.forEach((week, wi) => {
+                week.forEach(day => {
+                    svg.append('rect')
+                        .attr('x', wi * (cellSize + gap))
+                        .attr('y', day.weekday * (cellSize + gap))
+                        .attr('width', cellSize)
+                        .attr('height', cellSize)
+                        .attr('rx', 2)
+                        .attr('fill', colorForCount(day.answered));
+                });
+            });
         }
 
         function exportData() {
