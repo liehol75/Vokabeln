@@ -656,7 +656,7 @@
 
                     <div class="form-group">
                         <label>Übersetzung</label>
-                        <input type="text" id="inputTranslation" placeholder="z. B. sprechen" required>
+                        <input type="text" id="inputTranslation" placeholder="z. B. sprechen" required oninput="onTranslationInputChanged()">
                     </div>
 
                     <div class="form-group">
@@ -850,6 +850,7 @@
                             <option value="dictation">🎧 Diktat (Hörverstehen)</option>
                             <option value="cloze">✏️ Lückentext (Beispielsatz)</option>
                             <option value="collocation">🔗 Kollokationen</option>
+                            <option value="maximal">🎲 Maximale Variation (alles gemischt)</option>
                         </select>
                     </div>
                     <div>
@@ -878,6 +879,10 @@
                             <input type="checkbox" id="tensePerfToggle" onchange="startQuiz()" style="width:auto;"> Perfekt
                         </label>
                     </div>
+                    <label style="display: flex; align-items: center; gap: 8px; text-transform: none; font-size: 0.85rem; cursor: pointer; margin-top: 8px;">
+                        <input type="checkbox" id="includeGenderToggle" onchange="startQuiz()" style="width: auto;">
+                        🚻 Geschlecht/Artikel bei der Antwort verlangen (sonst nur Hinweis danach)
+                    </label>
                 </div>
 
                 <div id="dailyGoalQuizDisplay" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; text-align: center;">🎯 Tagesziel: 0/20</div>
@@ -1282,10 +1287,94 @@
             const lang = appData.userLangs[appData.currentUser];
             const url = getDictionaryUrl(word);
             window.open(url, '_blank');
-            runOnlineCheck(word, lang, url);
+            runOnlineCheck(word, lang, url, true);
         }
 
-        async function runOnlineCheck(word, lang, referenceUrl) {
+        // Sucht in einem Wiktionary-Textauszug nach expliziten Geschlechts-Angaben
+        // (je Sprache unterschiedliche Formulierungen). Anders als die volle
+        // Konjugationstabelle ist das Geschlecht ein einzelner, leicht prüfbarer Wert -
+        // deshalb wird er bei eindeutigem Fund automatisch übernommen (siehe
+        // scheduleAutoGenderFetch), statt nur zur manuellen Prüfung angezeigt zu werden.
+        const GENDER_TEXT_PATTERNS = {
+            'Spanisch':      [{ re: /\bsustantivo\s+femenino\b/i, gender: 'f' }, { re: /\bsustantivo\s+masculino\b/i, gender: 'm' }, { re: /\bnombre\s+femenino\b/i, gender: 'f' }, { re: /\bnombre\s+masculino\b/i, gender: 'm' }],
+            'Italienisch':   [{ re: /\bsostantivo\s+femminile\b/i, gender: 'f' }, { re: /\bsostantivo\s+maschile\b/i, gender: 'm' }],
+            'Portugiesisch': [{ re: /\bsubstantivo\s+feminino\b/i, gender: 'f' }, { re: /\bsubstantivo\s+masculino\b/i, gender: 'm' }],
+            'Französisch':   [{ re: /\bnom\s+féminin\b/i, gender: 'f' }, { re: /\bnom\s+masculin\b/i, gender: 'm' }],
+            'Deutsch':       [{ re: /\bfemininum\b/i, gender: 'f' }, { re: /\bmaskulinum\b/i, gender: 'm' }, { re: /\bneutrum\b/i, gender: 'n' }]
+        };
+
+        function extractGenderFromText(text, lang) {
+            const patterns = GENDER_TEXT_PATTERNS[lang];
+            if (!patterns || !text) return null;
+            for (const p of patterns) {
+                if (p.re.test(text)) return p.gender;
+            }
+            return null;
+        }
+
+        // Automatischer Hintergrund-Abgleich (kein Tab-Öffnen, kein Klick nötig): läuft
+        // gedämpft (600ms nach der letzten Eingabe) im Substantiv-Auto-Modus mit und
+        // übernimmt das Geschlecht direkt, wenn eine eindeutige Angabe gefunden wird.
+        // Bei fehlendem Internetzugang oder unklarem Ergebnis bleibt stillschweigend
+        // die bereits aktive lokale Endungs-Heuristik als Ergebnis stehen.
+        let genderFetchTimer = null;
+        let genderFetchToken = 0;
+
+        function scheduleAutoGenderFetch() {
+            clearTimeout(genderFetchTimer);
+            if (document.getElementById('inputType').value !== 'substantiv') return;
+            if (document.getElementById('nounFillMode').value !== 'auto') return;
+
+            const word = document.getElementById('inputWord').value.trim();
+            if (!word) return;
+
+            const myToken = ++genderFetchToken;
+            genderFetchTimer = setTimeout(() => runAutoGenderFetch(word, myToken), 600);
+        }
+
+        async function runAutoGenderFetch(word, token) {
+            const lang = appData.userLangs[appData.currentUser];
+            try {
+                const extract = await fetchWiktionaryExtract(word, lang);
+                if (token !== genderFetchToken) return; // Nutzer hat inzwischen weitergetippt
+                if (document.getElementById('inputType').value !== 'substantiv') return;
+                if (document.getElementById('inputWord').value.trim() !== word) return;
+                if (document.getElementById('nounFillMode').value !== 'auto') return;
+
+                const gender = extractGenderFromText(extract, lang);
+                if (gender) {
+                    document.getElementById('nounGender').value = gender;
+                    updateNounDisplay();
+                    showAutoGenderConfirmation(gender);
+                }
+            } catch (err) {
+                // Offline oder nicht gefunden - stiller Fallback auf die bereits aktive
+                // lokale Heuristik, keine Fehlermeldung nötig (nicht störend im Hintergrund).
+            }
+        }
+
+        function showAutoGenderConfirmation(gender) {
+            const label = { m: 'männlich', f: 'weiblich', n: 'sächlich' }[gender] || gender;
+            const box = document.getElementById('onlineCheckResult');
+            box.classList.remove('hidden');
+            box.innerHTML = '';
+            const msg = document.createElement('div');
+            msg.style.cssText = 'font-size:0.75rem; color:var(--accent-green);';
+            msg.textContent = `✅ Geschlecht online abgeglichen und übernommen: ${label}`;
+            box.appendChild(msg);
+        }
+
+        function fetchWiktionaryExtract(word, lang) {
+            const wikiLang = WIKTIONARY_LANG_CODES[lang] || 'de';
+            return fetch(`https://${wikiLang}.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`)
+                .then(resp => {
+                    if (!resp.ok) throw new Error('nicht gefunden');
+                    return resp.json();
+                })
+                .then(data => data.extract || '');
+        }
+
+        async function runOnlineCheck(word, lang, referenceUrl, isNoun) {
             const resultBox = document.getElementById('onlineCheckResult');
             resultBox.classList.remove('hidden');
             resultBox.innerHTML = '';
@@ -1296,20 +1385,37 @@
             resultBox.appendChild(loading);
 
             try {
-                const wikiLang = WIKTIONARY_LANG_CODES[lang] || 'de';
-                const resp = await fetch(`https://${wikiLang}.wiktionary.org/api/rest_v1/page/summary/${encodeURIComponent(word)}`);
-                if (!resp.ok) throw new Error('nicht gefunden');
-                const data = await resp.json();
-                const extract = (data.extract || '').slice(0, 300);
+                const extract = (await fetchWiktionaryExtract(word, lang)).slice(0, 300);
 
                 resultBox.innerHTML = '';
                 const box = document.createElement('div');
                 box.className = 'duplicate-warning-box';
                 box.style.cssText = 'background:rgba(99,102,241,0.12); border-color:rgba(99,102,241,0.35);';
 
+                // Bei Substantiven: Geschlecht direkt übernehmen, falls eindeutig erkannt
+                // (ein einzelner Wert ist zuverlässig genug, anders als eine ganze
+                // Konjugationstabelle - siehe Kommentar weiter oben).
+                let genderNote = '';
+                if (isNoun) {
+                    const gender = extractGenderFromText(extract, lang);
+                    if (gender && document.getElementById('nounFillMode').value === 'auto') {
+                        document.getElementById('nounGender').value = gender;
+                        updateNounDisplay();
+                        const label = { m: 'männlich', f: 'weiblich', n: 'sächlich' }[gender] || gender;
+                        genderNote = `✅ Geschlecht übernommen: ${label}`;
+                    }
+                }
+
+                if (genderNote) {
+                    const genderMsg = document.createElement('div');
+                    genderMsg.style.cssText = 'font-size:0.78rem; color:var(--accent-green); margin-bottom:6px;';
+                    genderMsg.textContent = genderNote;
+                    box.appendChild(genderMsg);
+                }
+
                 const title = document.createElement('div');
                 title.style.cssText = 'font-size:0.78rem; color:var(--text-muted); margin-bottom:6px;';
-                title.textContent = '📖 Wiktionary-Auszug (bitte mit den eingetragenen Formen abgleichen - wird nicht automatisch übernommen):';
+                title.textContent = '📖 Wiktionary-Auszug (bitte mit den eingetragenen Formen abgleichen):';
                 box.appendChild(title);
 
                 const text = document.createElement('div');
@@ -1438,6 +1544,7 @@
         let currentActiveVerb = null;
         let currentQuizItem = null;
         let currentQuizTargetAnswer = "";
+        let currentGenderHint = null; // {article, gender} - wird nach der Antwort kurz eingeblendet, wenn Geschlecht nicht Teil der Antwort war
         let examMode = null; // null = normaler Modus, sonst {total, current, correct, timeLimitSec, timerInterval, startedAt}
         let editingFamilyIds = []; // Temp-State für Wortfamilien-Verknüpfung im Formular
         let typeManuallySet = false; // Verhindert, dass Auto-Erkennung eine manuelle Wortart-Wahl überschreibt
@@ -1848,6 +1955,17 @@
             'Portugiesisch': ['o ', 'a ', 'os ', 'as ', 'um ', 'uma '],
             'Deutsch':       ['der ', 'die ', 'das ', 'ein ', 'eine ']
         };
+        // Ordnet jedem erkannten Artikel das grammatikalische Geschlecht zu - Grundlage
+        // dafür, dass beim Eintippen von z.B. "la casa" automatisch sowohl der Artikel
+        // aus dem Wortfeld entfernt (Bugfix gegen doppelte Artikel-Anzeige) als auch das
+        // Geschlecht korrekt übernommen wird.
+        const ARTICLE_TO_GENDER = {
+            'Spanisch':      { 'el': 'm', 'un': 'm', 'los': 'm', 'la': 'f', 'una': 'f', 'las': 'f' },
+            'Französisch':   { 'le': 'm', 'un': 'm', 'la': 'f', 'une': 'f' },
+            'Italienisch':   { 'il': 'm', 'lo': 'm', 'un': 'm', 'uno': 'm', 'i': 'm', 'gli': 'm', 'la': 'f', 'una': 'f', 'le': 'f' },
+            'Portugiesisch': { 'o': 'm', 'um': 'm', 'os': 'm', 'a': 'f', 'uma': 'f', 'as': 'f' },
+            'Deutsch':       { 'der': 'm', 'ein': 'm', 'die': 'f', 'eine': 'f', 'das': 'n' }
+        };
         // Verb-Endungen für die reguläre Erkennung (nutzt dieselben Muster wie die Auto-Konjugation).
         const VERB_ENDINGS = {
             'Spanisch': ['ar', 'er', 'ir'], 'Französisch': ['er', 'ir', 're'],
@@ -2070,6 +2188,45 @@
         // Füllt Geschlecht (falls Auto-Modus) und Plural-Vorschlag anhand des aktuell
         // eingegebenen Worts - "automatische Anpassung bei Eingabe", analog zur
         // Auto-Konjugation bei Verben.
+        // Bugfix + Komfort: Wenn im Wortfeld ein Artikel + Substantiv steht (z.B.
+        // "la casa"), wird der Artikel automatisch aus dem Wortfeld entfernt (sonst
+        // stünde er später DOPPELT da, da die Anzeige den Artikel anhand des
+        // Geschlechts selbst davorsetzt) und das Geschlecht direkt aus dem getippten
+        // Artikel übernommen - zuverlässiger als die reine Endungs-Heuristik.
+        function stripArticleAndApplyGender() {
+            const wordInput = document.getElementById('inputWord');
+            const raw = wordInput.value;
+            const lang = appData.userLangs[appData.currentUser];
+            const articles = ARTICLE_PATTERNS[lang] || [];
+            const genderMap = ARTICLE_TO_GENDER[lang] || {};
+            const lower = raw.toLowerCase();
+
+            for (const a of articles) {
+                if (lower.startsWith(a)) {
+                    const rest = raw.slice(a.length).trim();
+                    if (rest && !rest.includes(' ')) {
+                        const cursorPos = wordInput.selectionStart;
+                        const removedLength = raw.length - rest.length;
+                        wordInput.value = rest;
+                        if (wordInput.setSelectionRange && cursorPos !== null && cursorPos !== undefined) {
+                            const newPos = Math.max(0, cursorPos - removedLength);
+                            wordInput.setSelectionRange(newPos, newPos);
+                        }
+                        const gender = genderMap[a.trim()];
+                        if (gender) {
+                            document.getElementById('nounGender').value = gender;
+                            if (document.getElementById('inputType').value !== 'substantiv' && !typeManuallySet) {
+                                document.getElementById('inputType').value = 'substantiv';
+                                toggleVerbFields();
+                            }
+                        }
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         function autoGenerateNounForms() {
             const type = document.getElementById('inputType').value;
             if (type !== 'substantiv') return;
@@ -2079,13 +2236,20 @@
             const lang = appData.userLangs[appData.currentUser];
 
             if (fillMode === 'auto' && word) {
-                const detectedGender = detectNounGender(word, lang);
-                if (detectedGender) document.getElementById('nounGender').value = detectedGender;
+                // Geschlecht aus einem eventuell getippten Artikel hat Vorrang vor der
+                // Endungs-Heuristik (zuverlässiger, da explizit vom Nutzer angegeben).
+                const genderFromArticleAlreadySet = document.getElementById('nounGender').value;
+                if (!genderFromArticleAlreadySet) {
+                    const detectedGender = detectNounGender(word, lang);
+                    if (detectedGender) document.getElementById('nounGender').value = detectedGender;
+                }
 
                 if (PLURAL_AUTOFILL_LANGS.includes(lang)) {
                     const suggestedPlural = generatePlural(word, lang);
                     if (suggestedPlural) document.getElementById('nounPluralForm').value = suggestedPlural;
                 }
+
+                scheduleAutoGenderFetch();
             }
             updateNounDisplay();
         }
@@ -2096,7 +2260,9 @@
         }
 
         // Aktualisiert die Artikel-Labels und die Singular-Vorschau (analog zur
-        // Pronomen-Anzeige bei Konjugationen).
+        // Pronomen-Anzeige bei Konjugationen). Defensive Prüfung gegen doppelte
+        // Artikel-Anzeige bei bereits vorhandenen Altdaten, deren Wortfeld noch einen
+        // Artikel enthält.
         function updateNounDisplay() {
             const word = document.getElementById('inputWord').value.trim();
             const lang = appData.userLangs[appData.currentUser];
@@ -2104,21 +2270,28 @@
 
             const artSg = getNounArticle(lang, gender, false);
             const artPl = getNounArticle(lang, gender, true);
+            const alreadyHasArticle = artSg && word.toLowerCase().startsWith(artSg.toLowerCase() + ' ');
 
             document.getElementById('nounArticleSgLabel').textContent = artSg || 'Sg.';
             document.getElementById('nounArticlePlLabel').textContent = artPl || 'Pl.';
-            document.getElementById('nounSingularPreview').textContent = word ? (artSg ? `${artSg} ${word}` : word) : '–';
+            document.getElementById('nounSingularPreview').textContent = word
+                ? ((artSg && !alreadyHasArticle) ? `${artSg} ${word}` : word)
+                : '–';
 
             document.getElementById('nounAutoUnreliableHint').classList.toggle('hidden', PLURAL_AUTOFILL_LANGS.includes(lang));
         }
 
-        // Baut die kompakte "el casa · los casas"-Zeile für die Vokabelliste.
+        // Baut die kompakte "la casa · las casas"-Zeile für die Vokabelliste. Defensive
+        // Prüfung wie bei updateNounDisplay, damit bereits gespeicherte Altdaten mit
+        // Artikel im Wortfeld nicht doppelt angezeigt werden.
         function buildNounDisplayLine(item) {
             const artSg = getNounArticle(item.lang, item.gender, false);
             const artPl = getNounArticle(item.lang, item.gender, true);
-            const sg = artSg ? `${artSg} ${item.word}` : item.word;
+            const alreadyHasArticleSg = artSg && item.word.toLowerCase().startsWith(artSg.toLowerCase() + ' ');
+            const sg = (artSg && !alreadyHasArticleSg) ? `${artSg} ${item.word}` : item.word;
             if (!item.plural) return sg;
-            const pl = artPl ? `${artPl} ${item.plural}` : item.plural;
+            const alreadyHasArticlePl = artPl && item.plural.toLowerCase().startsWith(artPl.toLowerCase() + ' ');
+            const pl = (artPl && !alreadyHasArticlePl) ? `${artPl} ${item.plural}` : item.plural;
             return `${sg} · ${pl}`;
         }
 
@@ -2162,6 +2335,41 @@
             if (adjEndings.some(suf => w.endsWith(suf) && w.length > suf.length + 1)) return 'adjektiv';
 
             return null;
+        }
+
+        // Erkennt die Wortart zusätzlich anhand der DEUTSCHEN Übersetzung (Artikel wie
+        // "das Haus" -> Substantiv, Infinitiv-Endung "-en" -> Verb). Ergänzt die
+        // fremdsprachige Erkennung um Fälle, in denen das fremde Wort allein keine
+        // eindeutigen Muster liefert (z.B. schwache Endungs-Heuristiken in manchen
+        // Sprachen), bleibt aber wie die anderen Erkennungen jederzeit manuell überschreibbar.
+        function detectWordTypeFromTranslation(translation) {
+            const t = translation.trim().toLowerCase();
+            if (!t) return null;
+
+            const germanArticles = ['der ', 'die ', 'das ', 'ein ', 'eine '];
+            if (germanArticles.some(a => t.startsWith(a))) return 'substantiv';
+
+            const firstWord = t.split(/[\s,;(]/)[0];
+            if (!firstWord || firstWord.includes(' ')) return null;
+
+            if (getIrregularVerb('Deutsch', firstWord)) return 'verb';
+            if (/en$/.test(firstWord) && firstWord.length > 3) return 'verb';
+
+            return null;
+        }
+
+        // Läuft bei jeder Eingabe im Übersetzungsfeld mit: nutzt die deutsche
+        // Übersetzung als zusätzliches Signal für die automatische Wortart-Erkennung,
+        // respektiert aber - wie bei der fremdsprachigen Erkennung - eine bereits
+        // manuell gewählte Wortart.
+        function onTranslationInputChanged() {
+            if (typeManuallySet) return;
+            const translation = document.getElementById('inputTranslation').value;
+            const detected = detectWordTypeFromTranslation(translation);
+            if (detected) {
+                document.getElementById('inputType').value = detected;
+                toggleVerbFields();
+            }
         }
 
         // ---------- Formulierungs-Erkennung & Verknüpfungs-Vorschlag ----------
@@ -2253,6 +2461,11 @@
                     }
                 }
             }
+
+            // Falls das Wortfeld "Artikel + Substantiv" enthält (z.B. "la casa"),
+            // Artikel entfernen und Geschlecht direkt übernehmen - muss vor den
+            // Auto-Fill-Aufrufen passieren, damit diese mit dem bereinigten Wort arbeiten.
+            stripArticleAndApplyGender();
 
             autoGenerateConjugations();
             autoGenerateNounForms();
@@ -3636,16 +3849,19 @@
             document.getElementById('quizBadge').textContent = `Box ${currentQuizItem.box || 1}`;
 
             let skipHint = false;
+            currentGenderHint = null; // wird nach der Antwort kurz eingeblendet, wenn Geschlecht nicht verlangt wurde
 
-            // "Beide Richtungen (zufällig)": pro Frage neu zwischen den beiden
-            // Standardrichtungen auswürfeln.
-            const effectiveDir = dir === 'both' ? (Math.random() < 0.5 ? 'foreign_de' : 'de_foreign') : dir;
+            // "Beide Richtungen (zufällig)" und "Maximale Variation" würfeln beide pro
+            // Frage neu zwischen den beiden Standardrichtungen.
+            const isMaximalMode = dir === 'maximal';
+            const effectiveDir = (dir === 'both' || isMaximalMode) ? (Math.random() < 0.5 ? 'foreign_de' : 'de_foreign') : dir;
 
             if (effectiveDir === 'foreign_de' || effectiveDir === 'de_foreign') {
                 // "Konjugationen einbeziehen": bei Verben mit hinterlegten Formen wird
                 // mit einer gewissen Wahrscheinlichkeit statt der Grundform eine
-                // konjugierte Form abgefragt (statt der reinen Übersetzungsfrage).
-                const includeConj = document.getElementById('includeConjugationsToggle').checked;
+                // konjugierte Form abgefragt. Bei "Maximale Variation" immer aktiv.
+                const includeConj = isMaximalMode || document.getElementById('includeConjugationsToggle').checked;
+                const includeGender = isMaximalMode || document.getElementById('includeGenderToggle').checked;
                 const hasUsableConj = currentQuizItem.type === 'verb' && currentQuizItem.conjugations && (
                     (currentQuizItem.conjugations.pres && currentQuizItem.conjugations.pres.some(f => f)) ||
                     (currentQuizItem.conjugations.past && currentQuizItem.conjugations.past.some(f => f)) ||
@@ -3655,18 +3871,42 @@
                     ? buildConjugationQuestion(currentQuizItem, currentLang)
                     : null;
 
+                // "Maximale Variation": bei Substantiven mit Plural gelegentlich die
+                // Pluralform statt der Grundform abfragen.
+                const usePlural = isMaximalMode && currentQuizItem.type === 'substantiv' &&
+                    currentQuizItem.plural && Math.random() < 0.3;
+
                 if (conjQuestion) {
                     quizPromptEl.textContent = conjQuestion.promptText;
                     document.getElementById('quizSubprompt').textContent = conjQuestion.subpromptText;
                     currentQuizTargetAnswer = conjQuestion.targetAnswer;
                 } else if (effectiveDir === 'foreign_de') {
-                    quizPromptEl.textContent = currentQuizItem.word;
-                    document.getElementById('quizSubprompt').textContent = "Wie lautet die deutsche Übersetzung?";
+                    const wordForm = usePlural ? currentQuizItem.plural : currentQuizItem.word;
+                    const artForPrompt = (currentQuizItem.type === 'substantiv')
+                        ? getNounArticle(currentLang, currentQuizItem.gender, usePlural) : '';
+                    quizPromptEl.textContent = artForPrompt ? `${artForPrompt} ${wordForm}` : wordForm;
+                    document.getElementById('quizSubprompt').textContent = usePlural
+                        ? "Wie lautet die deutsche Übersetzung (Plural)?"
+                        : "Wie lautet die deutsche Übersetzung?";
                     currentQuizTargetAnswer = currentQuizItem.translation;
                 } else {
                     quizPromptEl.textContent = currentQuizItem.translation;
                     document.getElementById('quizSubprompt').textContent = `Übersetze ins ${currentLang}:`;
-                    currentQuizTargetAnswer = currentQuizItem.word;
+
+                    const wordForm = usePlural ? currentQuizItem.plural : currentQuizItem.word;
+                    if (currentQuizItem.type === 'substantiv') {
+                        const article = getNounArticle(currentLang, currentQuizItem.gender, usePlural);
+                        if (includeGender && article) {
+                            // Geschlecht/Artikel wird als Teil der erwarteten Antwort verlangt.
+                            currentQuizTargetAnswer = `${article} ${wordForm}`;
+                        } else {
+                            // Standard: ohne Artikel antworten, Geschlecht danach nur als Hinweis.
+                            currentQuizTargetAnswer = wordForm;
+                            if (article) currentGenderHint = { article, gender: currentQuizItem.gender };
+                        }
+                    } else {
+                        currentQuizTargetAnswer = wordForm;
+                    }
                 }
             } else if (dir === 'multiple_choice') {
                 quizPromptEl.textContent = currentQuizItem.word;
@@ -4073,9 +4313,12 @@
                 
                 const daysToAdd = BOX_INTERVALS[nextBox];
                 currentQuizItem.nextReview = Date.now() + (daysToAdd * 24 * 60 * 60 * 1000);
-                
+
+                const genderHintText = currentGenderHint
+                    ? ` 🚻 ${{ m: 'männlich', f: 'weiblich', n: 'sächlich' }[currentGenderHint.gender]} (${currentGenderHint.article} ${currentQuizItem.word})`
+                    : '';
                 resDetail.textContent = `Aufstieg in Box ${nextBox}. Nächste Wiederholung in ${daysToAdd} Tag(en).`
-                    + (accentHintNeeded ? ' ⚠️ Achte auf den Akzent!' : '');
+                    + (accentHintNeeded ? ' ⚠️ Achte auf den Akzent!' : '') + genderHintText;
                 saveToLocalStorage();
 
                 if (examMode) {
