@@ -2270,13 +2270,14 @@
 
             const artSg = getNounArticle(lang, gender, false);
             const artPl = getNounArticle(lang, gender, true);
-            const alreadyHasArticle = artSg && word.toLowerCase().startsWith(artSg.toLowerCase() + ' ');
 
             document.getElementById('nounArticleSgLabel').textContent = artSg || 'Sg.';
             document.getElementById('nounArticlePlLabel').textContent = artPl || 'Pl.';
-            document.getElementById('nounSingularPreview').textContent = word
-                ? ((artSg && !alreadyHasArticle) ? `${artSg} ${word}` : word)
-                : '–';
+            // Bugfix: Das feste Label links (z.B. "el") zeigt den Artikel bereits an -
+            // die Vorschau daneben darf ihn nicht zusätzlich wiederholen (sonst "el el
+            // perro"). Nur das reine Wort anzeigen, analog zum bereits korrekten
+            // Plural-Feld darunter, das ebenfalls nur "perros" ohne "los" zeigt.
+            document.getElementById('nounSingularPreview').textContent = word || '–';
 
             document.getElementById('nounAutoUnreliableHint').classList.toggle('hidden', PLURAL_AUTOFILL_LANGS.includes(lang));
         }
